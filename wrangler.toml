@@ -1,0 +1,13 @@
+name = "nightcord-at-25"
+main = ".svelte-kit/cloudflare/_worker.js"
+compatibility_date = "2025-09-05"
+
+[assets]
+binding = "ASSETS"
+directory = ".svekte-kit/cloudflare"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nightcord_at_25"
+database_id = "49cea6dc-18ac-429f-91de-01fd9e8649fb"
+migrations_dir = "drizzle/migrations"
