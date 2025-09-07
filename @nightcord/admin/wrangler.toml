@@ -2,6 +2,11 @@ name = "nightcord-at-admin"
 main = ".svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2025-09-05"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+
+[[routes]]
+pattern = "admin.nightcord.at"
+custom_domain = true
 
 [assets]
 binding = "ASSETS"
