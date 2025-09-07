@@ -16,3 +16,6 @@ migrations_dir = "drizzle/"
 [vars]
 N25_PUBLIC_DEPLOYMENT_ENV = "prod"
 N25_PUBLIC_CF_TURNSTILE_SITEKEY = "0x4AAAAAABzvp9Ei968n3hWk"
+
+[observability]
+enabled = true
