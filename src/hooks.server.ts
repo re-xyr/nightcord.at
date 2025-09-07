@@ -18,6 +18,8 @@ export const handle: Handle = ({ event, resolve }) => {
     },
   }
 
+  console.log('Visitor metadata:', event.locals.visitor)
+
   return paraglideMiddleware(event.request, ({ request, locale }) => {
     event.request = request
 

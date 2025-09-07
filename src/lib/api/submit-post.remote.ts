@@ -24,18 +24,15 @@ async function validateTurnstile(token: string, ip: string | null): Promise<bool
     })
 
     if (!response.ok) {
-      console.error(`Turnstile verification failed, token: ${token}`)
+      console.error(`Turnstile verification failed (non-200 status):`, response.statusText)
       return false
     }
 
     const data = zTurnstileApiResponse.parse(await response.json())
-    if (!data.success)
-      console.error(
-        `Turnstile verification unsuccessful, token: ${token}, errors: ${data['error-codes']?.join(', ')}`,
-      )
+    if (!data.success) console.error(`Turnstile verification unsuccessful:`, data['error-codes'])
     return data.success
   } catch (error) {
-    console.error(`Error validating Turnstile token: ${error}`)
+    console.error(`Error validating Turnstile token:`, error)
     return false
   }
 }
@@ -47,8 +44,10 @@ export const submitPost = command(
   }),
   async ({ content, turnstileToken }) => {
     const { locals } = getRequestEvent()
+    console.log('Received post submission:', { content, turnstileToken })
+
     if (!locals.visitor.ip || !locals.visitor.userAgent) {
-      console.error(`Request has no origin IP or User-Agent, token: ${turnstileToken}`)
+      console.error('Request has no origin IP or User-Agent, dropping')
       return { success: false, error: 'Missing visitor information' }
     }
 
@@ -63,6 +62,7 @@ export const submitPost = command(
     if (!analysis) {
       return { success: false, error: 'Text analysis failed' }
     }
+    console.log('Text analysis result:', analysis)
 
     await locals.db.insert(posts).values({
       content,

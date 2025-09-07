@@ -33,7 +33,7 @@ export async function analyzeText(content: string): Promise<TextAnalysis | null>
     })
 
     if (!response.ok) {
-      console.error('Failed to analyze text:', response.statusText)
+      console.error('Failed to analyze text (non-200 status):', response.statusText)
       return null
     }
 
