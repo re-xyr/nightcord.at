@@ -13,7 +13,7 @@ export const handle: Handle = ({ event, resolve }) => {
           : (event.request.headers.get('cf-connecting-ip') ?? null),
       userAgent: event.request.headers.get('user-agent') ?? null,
       country: event.request.headers.get('cf-ipcountry') ?? null,
-      region: event.request.headers.get('cf-ipregion') ?? null,
+      region: event.request.headers.get('cf-region') ?? null,
       city: event.request.headers.get('cf-ipcity') ?? null,
     },
   }
