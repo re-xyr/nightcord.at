@@ -1,0 +1,3 @@
+# Don't crawl this site; it's guarded behind Cloudflare Access
+User-agent: *
+Disallow: /

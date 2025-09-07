@@ -6,5 +6,6 @@ bun.lock
 bun.lockb
 
 # Miscellaneous
+@nightcord/admin/static/
 @nightcord/public/static/
 @nightcord/shared/drizzle/
