@@ -1,3 +1,2 @@
-# The admin dashboard is guarded behind CF Access; don't index it.
 User-agent: *
-Disallow: /admin
+Disallow:
