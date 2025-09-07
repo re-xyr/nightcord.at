@@ -8,6 +8,13 @@ declare global {
     // interface Error {}
     interface Locals {
       db: Database
+      visitor: {
+        ip: string | null
+        userAgent: string | null
+        country: string | null
+        region: string | null
+        city: string | null
+      }
     }
     // interface PageData {}
     // interface PageState {}

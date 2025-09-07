@@ -18,7 +18,7 @@ const zPerspectiveApiResponse = z.object({
 })
 
 export async function analyzeText(content: string): Promise<TextAnalysis | null> {
-  const requestUrl = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${env.GOOGLE_APIKEY}`
+  const requestUrl = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${env.N25_GOOGLE_APIKEY}`
 
   const body = {
     comment: { text: content },
