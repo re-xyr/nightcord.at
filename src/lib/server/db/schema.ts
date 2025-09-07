@@ -9,12 +9,16 @@ export const posts = sqliteTable('post', {
     .notNull()
     .$defaultFn(() => new Date()),
 
-  status: text({ enum: ['pending', 'approved', 'rejected'] }).notNull(),
   inferredToxicity: real().notNull(),
+  status: text({ enum: ['pending', 'approved', 'rejected'] })
+    .notNull()
+    .default('pending'),
 
   authorIp: text().notNull(),
   authorUserAgent: text().notNull(),
-  authorLocation: text().notNull(),
+  authorCity: text().notNull(),
+  authorRegion: text().notNull(),
+  authorCountry: text().notNull(),
 })
 
 export const bannedIps = sqliteTable('bannedIp', {
