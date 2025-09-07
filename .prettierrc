@@ -14,5 +14,6 @@
       }
     }
   ],
+  "svelteIndentScriptAndStyle": false,
   "tailwindStylesheet": "./src/app.css"
 }

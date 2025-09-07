@@ -1,28 +1,28 @@
 <script lang="ts">
-  import { Turnstile } from 'svelte-turnstile'
-  import { N25_PUBLIC_CF_TURNSTILE_SITEKEY, N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
-  import { submitPost } from '$lib/api/submit-post.remote'
-  import { getPosts } from '$lib/api/get-posts.remote'
+import { Turnstile } from 'svelte-turnstile'
+import { N25_PUBLIC_CF_TURNSTILE_SITEKEY, N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
+import { submitPost } from '$lib/api/submit-post.remote'
+import { getPosts } from '$lib/api/get-posts.remote'
 
-  let message = $state('')
-  let turnstileToken = $state('')
-  let submittable = $derived.by(() => {
-    if (!message) return false
-    if (!turnstileToken && N25_PUBLIC_DEPLOYMENT_ENV !== 'dev') return false
-    return true
+let message = $state('')
+let turnstileToken = $state('')
+let submittable = $derived.by(() => {
+  if (!message) return false
+  if (!turnstileToken && N25_PUBLIC_DEPLOYMENT_ENV !== 'dev') return false
+  return true
+})
+
+async function submit() {
+  const result = await submitPost({
+    content: message,
+    turnstileToken,
   })
 
-  async function submit() {
-    const result = await submitPost({
-      content: message,
-      turnstileToken,
-    })
-
-    if (!result.success) {
-      alert(`Error submitting message: ${result.error}`)
-      return
-    }
+  if (!result.success) {
+    alert(`Error submitting message: ${result.error}`)
+    return
   }
+}
 </script>
 
 <h2>Submit a message</h2>
