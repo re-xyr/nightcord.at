@@ -1,18 +1,18 @@
 {
-	"tabWidth": 2,
-	"useTabs": false,
-	"semi": false,
-	"singleQuote": true,
-	"arrowParens": "avoid",
-	"printWidth": 100,
-	"plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
-	"overrides": [
-		{
-			"files": "*.svelte",
-			"options": {
-				"parser": "svelte"
-			}
-		}
-	],
-	"tailwindStylesheet": "./src/app.css"
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": false,
+  "singleQuote": true,
+  "arrowParens": "avoid",
+  "printWidth": 100,
+  "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
+  "overrides": [
+    {
+      "files": "*.svelte",
+      "options": {
+        "parser": "svelte"
+      }
+    }
+  ],
+  "tailwindStylesheet": "./src/app.css"
 }

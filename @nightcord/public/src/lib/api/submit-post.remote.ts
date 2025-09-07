@@ -2,7 +2,7 @@ import { command, getRequestEvent } from '$app/server'
 import z from 'zod'
 
 import { analyzeText } from '$lib/server/analyze'
-import { posts } from '$lib/server/db/schema'
+import { posts } from '@nightcord/shared/db/schema'
 import { env } from '$env/dynamic/private'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
 

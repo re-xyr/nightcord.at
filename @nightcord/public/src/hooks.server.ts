@@ -1,6 +1,6 @@
 import type { Handle } from '@sveltejs/kit'
 import { paraglideMiddleware } from '$lib/paraglide/server'
-import { getDb } from '$lib/server/db'
+import { getDb } from '@nightcord/shared/db'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
 
 export const handle: Handle = ({ event, resolve }) => {
@@ -9,7 +9,7 @@ export const handle: Handle = ({ event, resolve }) => {
     visitor: {
       ip:
         N25_PUBLIC_DEPLOYMENT_ENV === 'dev'
-          ? '::'
+          ? '::1'
           : (event.request.headers.get('cf-connecting-ip') ?? null),
       userAgent: event.request.headers.get('user-agent') ?? null,
       country: event.request.headers.get('cf-ipcountry') ?? null,

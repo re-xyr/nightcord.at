@@ -1,5 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types'
-import type { Database } from '$lib/server/db'
+import type { Database } from '@nightcord/shared/db'
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces

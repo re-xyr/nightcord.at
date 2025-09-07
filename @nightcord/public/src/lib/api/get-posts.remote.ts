@@ -1,5 +1,5 @@
 import { getRequestEvent, query } from '$app/server'
-import { posts } from '$lib/server/db/schema'
+import { posts } from '@nightcord/shared/db/schema'
 import { eq } from 'drizzle-orm'
 import { sql } from 'drizzle-orm/sql/sql'
 

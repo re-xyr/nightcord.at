@@ -1,0 +1,25 @@
+{
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.d.ts", "drizzle.config.ts"],
+  "compilerOptions": {
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "strict": true,
+
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+
+    "noEmit": true,
+
+    "allowJs": true,
+    "checkJs": true,
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "esnext",
+
+    "skipLibCheck": true
+  }
+}

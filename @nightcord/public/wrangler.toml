@@ -11,7 +11,7 @@ directory = ".svelte-kit/cloudflare"
 binding = "DB"
 database_name = "nightcord_at_25"
 database_id = "49cea6dc-18ac-429f-91de-01fd9e8649fb"
-migrations_dir = "drizzle/"
+migrations_dir = "../shared/drizzle/"
 
 [vars]
 N25_PUBLIC_DEPLOYMENT_ENV = "prod"

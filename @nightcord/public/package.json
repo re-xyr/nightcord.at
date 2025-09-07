@@ -1,0 +1,41 @@
+{
+  "name": "@nightcord/public",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@sveltejs/adapter-cloudflare": "catalog:",
+    "@sveltejs/vite-plugin-svelte": "catalog:",
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "svelte-check": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-devtools-json": "catalog:",
+    "wrangler": "catalog:"
+  },
+  "dependencies": {
+    "@inlang/paraglide-js": "catalog:",
+    "@nightcord/shared": "workspace:^",
+    "@sveltejs/kit": "catalog:",
+    "bits-ui": "catalog:",
+    "drizzle-orm": "catalog:",
+    "svelte": "catalog:",
+    "svelte-turnstile": "catalog:",
+    "tailwindcss": "catalog:",
+    "zod": "catalog:"
+  }
+}
