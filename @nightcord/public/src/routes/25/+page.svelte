@@ -46,44 +46,44 @@ async function finishSubmit(turnstileToken: string) {
 
 <h2 class="font-bold">Submit a message</h2>
 
-<div>
-  <div class="flex flex-row items-stretch gap-4">
-    <textarea
-      bind:value={message}
-      placeholder="Your message..."
-      class="w-lg h-24 rounded-md border border-gray-300 p-2"
-    >
-    </textarea>
+<div class="flex flex-row items-stretch gap-4">
+  <textarea
+    bind:value={message}
+    placeholder="Your message..."
+    class="w-lg h-24 rounded-md border border-slate-300 p-2"
+  >
+  </textarea>
 
-    <button
-      onclick={initiateSubmit}
-      disabled={!submittable}
-      class="w-32 rounded-md bg-slate-700 px-4 text-white transition-colors hover:bg-slate-800 disabled:bg-slate-400"
-    >
-      {#if pending}
-        <div class="text-bold animate-spin">◌</div>
-      {:else}
-        Submit
-      {/if}
-    </button>
-  </div>
-
-  <Turnstile
-    siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
-    appearance="interaction-only"
-    execution="execute"
-    bind:turnstile
-    bind:widgetId
-    on:callback={e => finishSubmit(e.detail.token)}
-  />
+  <button
+    onclick={initiateSubmit}
+    disabled={!submittable}
+    class="w-32 rounded-md bg-slate-700 px-4 text-white transition-colors hover:bg-slate-800 disabled:bg-slate-400"
+  >
+    {#if pending}
+      <div class="text-bold animate-spin">◌</div>
+    {:else}
+      Submit
+    {/if}
+  </button>
 </div>
+
+<Turnstile
+  siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
+  appearance="interaction-only"
+  execution="execute"
+  bind:turnstile
+  bind:widgetId
+  on:callback={e => finishSubmit(e.detail.token)}
+/>
 
 {#await getPosts() then posts}
   {#each posts as post}
-    <div class="post">
-      <p>{post.content}</p>
-      <small>Submitted at {new Date(post.createdAt).toLocaleString()}</small>
-      <small>{post.authorCity}, {post.authorRegion}, {post.authorCountry}</small>
+    <div class="border-t border-slate-300 pt-4">
+      <p lang={post.language}>{post.content}</p>
+      <div class="text-right text-xs text-slate-500">
+        {new Date(post.createdAt).toLocaleString()}
+        from {post.authorCity}, {post.authorRegion}, {post.authorCountry}
+      </div>
     </div>
   {/each}
 {:catch}
