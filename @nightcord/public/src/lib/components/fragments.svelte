@@ -21,6 +21,9 @@ let scene: _3.Scene
 let camera: _3.PerspectiveCamera
 let renderer: _3.WebGLRenderer
 let group: _3.Object3D
+
+let hemisphereLight: _3.HemisphereLight
+let directionalLight: _3.DirectionalLight
 let pointLight: _3.PointLight
 
 function getTriangleShape(params: Fragment): _3.Shape {
@@ -42,7 +45,6 @@ function getBufferGeometry(params: Fragment): _3.BufferGeometry {
     new _3.Vector3(0, height, 0),
     new _3.Vector3(tip, 0, 0),
     new _3.Vector3(base, height, 0),
-    new _3.Vector3(0, height, 0),
   ])
 }
 
@@ -105,10 +107,10 @@ onMount(() => {
   scene = new _3.Scene()
   scene.fog = new _3.Fog(0xf9f9fb, 10, 1000)
 
-  const hemisphereLight = new _3.HemisphereLight(0xf9f9fb, 0x6e7482, 2.0)
+  hemisphereLight = new _3.HemisphereLight(0xf9f9fb, 0x6e7482, 2.0)
   scene.add(hemisphereLight)
 
-  const directionalLight = new _3.DirectionalLight(0xffffff, 4.0)
+  directionalLight = new _3.DirectionalLight(0xffffff, 4.0)
   directionalLight.castShadow = true
   directionalLight.position.set(0, 5, 0)
   directionalLight.target.position.set(-10, 0, 0)
@@ -116,6 +118,7 @@ onMount(() => {
   scene.add(directionalLight.target)
 
   pointLight = new _3.PointLight(0xffffff, 5000.0)
+  pointLight.castShadow = true
   pointLight.position.set(0, 10, -550)
   scene.add(pointLight)
 
@@ -127,6 +130,8 @@ onMount(() => {
     antialias: true,
     alpha: true,
   })
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = _3.VSMShadowMap
 
   camera.position.set(0, 10, -550)
 
@@ -136,8 +141,27 @@ onMount(() => {
   renderer.setAnimationLoop(animate)
 })
 
+function clearScene() {
+  group?.clear()
+
+  for (const frag of fragments) {
+    if (!frag.object) continue
+    frag.object.traverse(child => {
+      if (child instanceof _3.Mesh || child instanceof _3.Line) {
+        child.geometry.dispose()
+        child.material.dispose()
+      }
+    })
+  }
+  fragments = []
+}
+
 onDestroy(() => {
   console.log('Disposing Three.js resources')
+  clearScene()
+  hemisphereLight?.dispose()
+  directionalLight?.dispose()
+  pointLight?.dispose()
   renderer?.dispose()
 })
 
@@ -166,7 +190,7 @@ function animate(now: DOMHighResTimeStamp) {
   }
 
   camera.position.set(-pointer.x * 2, 10 + pointer.y, -550)
-  pointLight.position.set(pointer.x * 100, 10 - pointer.y * 50, -550)
+  pointLight.position.set(-pointer.x * 100, 10 + pointer.y * 50, -550)
 
   // raycaster.setFromCamera(pointer, camera)
   // const intersects = raycaster.intersectObjects(group.children, true)
@@ -210,9 +234,7 @@ $effect(() => {
 
 // Depends: count
 $effect(() => {
-  group.clear()
-
-  fragments = []
+  clearScene()
   for (let ix = 0; ix < count; ix++) {
     fragments.push(randomFragment())
   }
@@ -234,6 +256,8 @@ $effect(() => {
       metalness: 0.0,
     })
     const mesh = new _3.Mesh(geometry, material)
+    mesh.castShadow = true
+    mesh.receiveShadow = true
     object.add(mesh)
 
     if (frag.hasOutline) {
@@ -241,7 +265,7 @@ $effect(() => {
       const outlineMaterial = new _3.LineBasicMaterial({
         color: 0xffffff,
       })
-      const outline = new _3.Line(geometry, outlineMaterial)
+      const outline = new _3.LineLoop(geometry, outlineMaterial)
       object.add(outline)
       outline.rotateZ(0.1)
     }
