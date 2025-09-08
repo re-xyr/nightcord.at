@@ -17,6 +17,7 @@
     "@sveltejs/vite-plugin-svelte": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",
+    "@types/three": "catalog:",
     "svelte-check": "catalog:",
     "turnstile-types": "catalog:",
     "typescript": "catalog:",
@@ -33,6 +34,7 @@
     "svelte": "catalog:",
     "svelte-turnstile": "catalog:",
     "tailwindcss": "catalog:",
+    "three": "catalog:",
     "zod": "catalog:"
   }
 }

@@ -4,6 +4,7 @@ import { N25_PUBLIC_CF_TURNSTILE_SITEKEY, N25_PUBLIC_DEPLOYMENT_ENV } from '$env
 import { submitPost } from '$lib/api/submit-post.remote'
 import { getPosts } from '$lib/api/get-posts.remote'
 import type { TurnstileObject } from 'turnstile-types'
+import Fragments from '$lib/components/fragments.svelte'
 
 let message = $state('')
 let turnstile: TurnstileObject | null = $state(null)
@@ -44,6 +45,8 @@ async function finishSubmit(turnstileToken: string) {
 }
 </script>
 
+<Fragments count={300} />
+<!--
 <h2 class="font-bold">Submit a message</h2>
 
 <div class="flex flex-row items-stretch gap-4">
@@ -51,8 +54,7 @@ async function finishSubmit(turnstileToken: string) {
     bind:value={message}
     placeholder="Your message..."
     class="w-lg h-24 rounded-md border border-slate-300 p-2"
-  >
-  </textarea>
+  ></textarea>
 
   <button
     onclick={initiateSubmit}
@@ -88,4 +90,4 @@ async function finishSubmit(turnstileToken: string) {
   {/each}
 {:catch}
   Unable to load posts.
-{/await}
+{/await} -->

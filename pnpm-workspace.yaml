@@ -9,6 +9,7 @@ catalog:
   '@sveltejs/vite-plugin-svelte': ^6.1.4
   '@tailwindcss/vite': ^4.1.13
   '@types/node': ^22.18.1
+  '@types/three': ^0.180.0
   bits-ui: ^2.9.6
   drizzle-kit: ^0.31.4
   drizzle-orm: ^0.44.5
@@ -19,6 +20,7 @@ catalog:
   svelte-check: ^4.3.1
   svelte-turnstile: ^0.11.0
   tailwindcss: ^4.1.13
+  three: ^0.180.0
   turnstile-types: ^1.2.3
   typescript: ^5.9.2
   vite: ^7.1.4
