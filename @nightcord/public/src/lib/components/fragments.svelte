@@ -1,5 +1,5 @@
 <script lang="ts">
-import { onMount } from 'svelte'
+import { onDestroy, onMount } from 'svelte'
 import * as _3 from 'three'
 
 import { innerWidth, innerHeight } from 'svelte/reactivity/window'
@@ -80,7 +80,7 @@ function randomFragment(): Fragment {
     base,
     height,
     tip: unif(0, base),
-    hue: unif(275, 360),
+    hue: unif(265, 360),
     initialPhase: unif(0, 2 * Math.PI),
     initialRotation: new _3.Euler(unif(0, 2 * Math.PI), unif(0, 2 * Math.PI), unif(0, 2 * Math.PI)),
     rotationSpeed: new _3.Vector3(unif(1, 5), unif(1, 5), unif(1, 5)),
@@ -115,7 +115,7 @@ onMount(() => {
   scene.add(directionalLight)
   scene.add(directionalLight.target)
 
-  pointLight = new _3.PointLight(0xffffff, 10000.0)
+  pointLight = new _3.PointLight(0xffffff, 5000.0)
   pointLight.position.set(0, 10, -550)
   scene.add(pointLight)
 
@@ -166,7 +166,7 @@ function animate(now: DOMHighResTimeStamp) {
   }
 
   camera.position.set(-pointer.x * 2, 10 + pointer.y, -550)
-  pointLight.position.set(pointer.x * 100, 10 - pointer.y * 50, -600)
+  pointLight.position.set(pointer.x * 100, 10 - pointer.y * 50, -550)
 
   // raycaster.setFromCamera(pointer, camera)
   // const intersects = raycaster.intersectObjects(group.children, true)
