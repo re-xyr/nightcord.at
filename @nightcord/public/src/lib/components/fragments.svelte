@@ -112,8 +112,8 @@ onMount(() => {
 
   directionalLight = new _3.DirectionalLight(0xffffff, 4.0)
   directionalLight.castShadow = true
-  directionalLight.position.set(0, 5, 0)
-  directionalLight.target.position.set(-10, 0, 0)
+  directionalLight.position.set(10, 5, 5)
+  directionalLight.target.position.set(0, 0, 0)
   scene.add(directionalLight)
   scene.add(directionalLight.target)
 
@@ -190,7 +190,7 @@ function animate(now: DOMHighResTimeStamp) {
   }
 
   camera.position.set(-pointer.x * 2, 10 + pointer.y, -550)
-  pointLight.position.set(-pointer.x * 100, 10 + pointer.y * 50, -550)
+  pointLight.position.set(-pointer.x * 50, 10 + pointer.y * 25, -550)
 
   // raycaster.setFromCamera(pointer, camera)
   // const intersects = raycaster.intersectObjects(group.children, true)
