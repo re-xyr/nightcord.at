@@ -136,6 +136,11 @@ onMount(() => {
   renderer.setAnimationLoop(animate)
 })
 
+onDestroy(() => {
+  console.log('Disposing Three.js resources')
+  renderer?.dispose()
+})
+
 function animate(now: DOMHighResTimeStamp) {
   const baseOrbitPeriod = 1200000 // ms
   const baseRotationPeriod = 1200000 // ms
