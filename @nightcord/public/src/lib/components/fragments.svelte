@@ -5,6 +5,7 @@ import * as _3 from 'three'
 import { innerWidth, innerHeight } from 'svelte/reactivity/window'
 
 import background from '$lib/assets/empty-sekai.png'
+import { browser } from '$app/environment'
 
 interface Props {
   count: number
@@ -151,7 +152,7 @@ onMount(() => {
 })
 
 function clearScene() {
-  group?.clear()
+  group.clear()
 
   for (const frag of fragments) {
     if (!frag.object) continue
@@ -166,12 +167,13 @@ function clearScene() {
 }
 
 onDestroy(() => {
+  if (!browser) return
   console.log('Disposing Three.js resources')
   clearScene()
-  hemisphereLight?.dispose()
-  directionalLight?.dispose()
-  pointLight?.dispose()
-  renderer?.dispose()
+  hemisphereLight.dispose()
+  directionalLight.dispose()
+  pointLight.dispose()
+  renderer.dispose()
 })
 
 function animate(now: DOMHighResTimeStamp) {
