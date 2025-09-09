@@ -4,6 +4,8 @@ import * as _3 from 'three'
 
 import { innerWidth, innerHeight } from 'svelte/reactivity/window'
 
+import background from '$lib/assets/empty-sekai.png'
+
 interface Props {
   count: number
 }
@@ -74,9 +76,9 @@ function bernoulli(p: number): boolean {
 function randomFragment(): Fragment {
   let base: number = 0
   let height: number = 0
-  while (base * height < 16) {
-    base = unif(0, 32)
-    height = unif(0, 32)
+  while (base * height < 0.16) {
+    base = unif(0, 3.2)
+    height = unif(0, 3.2)
   }
   return {
     base,
@@ -87,14 +89,20 @@ function randomFragment(): Fragment {
     initialRotation: new _3.Euler(unif(0, 2 * Math.PI), unif(0, 2 * Math.PI), unif(0, 2 * Math.PI)),
     rotationSpeed: new _3.Vector3(unif(1, 5), unif(1, 5), unif(1, 5)),
     translationSpeed: unif(1, 3),
-    noiseH: unif(-50, 50),
-    noiseV: unif(-50, 50),
+    noiseH: unif(-5, 5),
+    noiseV: unif(-5, 5),
     hasOutline: bernoulli(0.25),
     object: null,
   }
 }
 
 let fragments: Fragment[] = []
+
+const CAMERA_X = 0
+const CAMERA_Y = 1.5
+const CAMERA_Z = -55
+
+let aspectRatio = 1.0
 
 onMount(() => {
   addEventListener('pointermove', event => {
@@ -105,27 +113,27 @@ onMount(() => {
 
 onMount(() => {
   scene = new _3.Scene()
-  scene.fog = new _3.Fog(0xf9f9fb, 10, 1000)
+  scene.fog = new _3.Fog(0xf9f9fb, 1, 100)
 
   hemisphereLight = new _3.HemisphereLight(0xf9f9fb, 0x6e7482, 2.0)
   scene.add(hemisphereLight)
 
   directionalLight = new _3.DirectionalLight(0xffffff, 4.0)
   directionalLight.castShadow = true
-  directionalLight.position.set(10, 5, 5)
+  directionalLight.position.set(2, 1, 1)
   directionalLight.target.position.set(0, 0, 0)
   scene.add(directionalLight)
   scene.add(directionalLight.target)
 
-  pointLight = new _3.PointLight(0xffffff, 5000.0)
+  pointLight = new _3.PointLight(0xffffff, 50.0)
   pointLight.castShadow = true
-  pointLight.position.set(0, 10, -550)
+  pointLight.position.set(CAMERA_X, CAMERA_Y, CAMERA_Z)
   scene.add(pointLight)
 
   group = new _3.Object3D()
   scene.add(group)
 
-  camera = new _3.PerspectiveCamera(/*fov=*/ 105, /*aspect=*/ 1.0, /*near=*/ 0.1, /*far=*/ 2000)
+  camera = new _3.PerspectiveCamera(/*fov=*/ 105, /*aspect=*/ 1.0, /*near=*/ 0.01, /*far=*/ 200)
   renderer = new _3.WebGLRenderer({
     antialias: true,
     alpha: true,
@@ -133,10 +141,11 @@ onMount(() => {
   renderer.shadowMap.enabled = true
   renderer.shadowMap.type = _3.VSMShadowMap
 
-  camera.position.set(0, 10, -550)
+  camera.position.set(CAMERA_X, CAMERA_Y, CAMERA_Z)
+  camera.lookAt(0, 0, 0)
 
   renderTarget.appendChild(renderer.domElement)
-  renderer.domElement.style.background = `url("/empty-sekai.png") center center / cover no-repeat`
+  renderer.domElement.style.background = `url("${background}") center center / cover no-repeat`
 
   renderer.setAnimationLoop(animate)
 })
@@ -189,8 +198,16 @@ function animate(now: DOMHighResTimeStamp) {
     fragment.object.rotation.set(rotationAngleX, rotationAngleY, rotationAngleZ)
   }
 
-  camera.position.set(-pointer.x * 2, 10 + pointer.y, -550)
-  pointLight.position.set(-pointer.x * 50, 10 + pointer.y * 25, -550)
+  camera.position.set(
+    CAMERA_X - pointer.x * 0.05 * aspectRatio,
+    CAMERA_Y + pointer.y * 0.05,
+    CAMERA_Z,
+  )
+  pointLight.position.set(
+    CAMERA_X - pointer.x * 2.5 * aspectRatio,
+    CAMERA_Y + pointer.y * 2.5,
+    CAMERA_Z,
+  )
 
   // raycaster.setFromCamera(pointer, camera)
   // const intersects = raycaster.intersectObjects(group.children, true)
@@ -219,13 +236,8 @@ $effect(() => {
   const w = innerWidth.current,
     h = innerHeight.current
 
-  camera.aspect = w / h
-  camera.rotation.set(0, 0, 0)
-  camera.lookAt(0, 0, 0)
-
-  const angle = Math.atan2(h, w)
-
-  camera.rotateZ(-angle + ((1 - angle) * Math.PI * 0.3) / 2)
+  aspectRatio = w / h
+  camera.aspect = aspectRatio
   camera.updateProjectionMatrix()
 
   renderer.setSize(w, h)
@@ -244,8 +256,11 @@ $effect(() => {
 
     const shape = getTriangleShape(frag)
     const geometry = new _3.ExtrudeGeometry(shape, {
-      depth: 0.5,
-      bevelEnabled: false,
+      depth: 0.03,
+      bevelEnabled: true,
+      bevelSegments: 1,
+      bevelThickness: 0.02,
+      bevelSize: 0.02,
     })
     const material = new _3.MeshPhysicalMaterial({
       color: new _3.Color().setHSL(Math.random() * 0.25 + 0.5, 0.5, 0.7),
@@ -279,9 +294,11 @@ $effect(() => {
 })
 
 function getPosition(fragment: Fragment, progress: number): _3.Vector3 {
-  const c = [0, fragment.noiseV, 0]
-  const u = [500 + fragment.noiseH, 0, 0]
-  const v = [0, 0, 500 + fragment.noiseH]
+  const c = [fragment.noiseH, fragment.noiseV, fragment.noiseH]
+  const angle = aspectRatio >= 0.75 ? 0.3 : Math.atan(1 / aspectRatio)
+
+  const u = [50 * Math.cos(angle), -50 * Math.sin(angle), 0]
+  const v = [0, 0, 50]
 
   return new _3.Vector3(
     c[0] + u[0] * Math.cos(progress) + v[0] * Math.sin(progress),
