@@ -104,6 +104,8 @@ const CAMERA_Y = 1.5
 const CAMERA_Z = -55
 
 let aspectRatio = 1.0
+let viewportHeight = 512
+let viewportWidth = 512
 
 onMount(() => {
   addEventListener('pointermove', event => {
@@ -235,14 +237,15 @@ function animate(now: DOMHighResTimeStamp) {
 // Depends: innerWidth, innerHeight
 $effect(() => {
   if (!innerWidth.current || !innerHeight.current) return
-  const w = innerWidth.current,
-    h = innerHeight.current
+  viewportHeight = innerHeight.current
+  viewportWidth = innerWidth.current
+  aspectRatio = viewportWidth / viewportHeight
 
-  aspectRatio = w / h
   camera.aspect = aspectRatio
   camera.updateProjectionMatrix()
 
-  renderer.setSize(w, h)
+  renderer.setSize(viewportWidth, viewportHeight)
+  renderer.setPixelRatio(window.devicePixelRatio ?? 1)
   renderer.render(scene, camera)
 })
 
