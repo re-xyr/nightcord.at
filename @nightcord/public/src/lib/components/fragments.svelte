@@ -10,6 +10,7 @@ import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 import { animate } from 'animejs'
+import { on } from 'svelte/events'
 
 interface Props {
   count: number
@@ -70,8 +71,9 @@ interface Fragment {
   hue: number
   initialPhase: number
   initialRotation: _3.Euler
-  rotationSpeed: _3.Vector3
-  translationSpeed: number
+  rotAxis: _3.Vector3
+  rotSpeed: number
+  orbitSpeed: number
   noiseH: number
   noiseV: number
   hasOutline: boolean
@@ -100,8 +102,9 @@ function randomFragment(): Fragment {
     hue: unif(265, 360),
     initialPhase: unif(0, 2 * Math.PI),
     initialRotation: new _3.Euler(unif(0, 2 * Math.PI), unif(0, 2 * Math.PI), unif(0, 2 * Math.PI)),
-    rotationSpeed: new _3.Vector3(unif(1, 5), unif(1, 5), unif(1, 5)),
-    translationSpeed: unif(1, 3),
+    rotAxis: new _3.Vector3(unif(-1, 1), unif(-1, 1), unif(-1, 1)).normalize(),
+    rotSpeed: unif(0, 0.001),
+    orbitSpeed: unif(0, 0.000003),
     noiseH: unif(-5, 5),
     noiseV: unif(-5, 5),
     hasOutline: bernoulli(0.25),
@@ -110,6 +113,7 @@ function randomFragment(): Fragment {
 }
 
 let fragments: Fragment[] = []
+let meshMap: Map<_3.Mesh, Fragment> = new Map()
 
 const CAMERA_X = 0
 const CAMERA_Y = 1.5
@@ -120,9 +124,16 @@ let viewportHeight = 512
 let viewportWidth = 512
 
 onMount(() => {
-  addEventListener('pointermove', event => {
+  const updatePointer = (event: MouseEvent) => {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+    updateIntersection()
+  }
+
+  on(window, 'pointermove', updatePointer)
+  on(window, 'click', e => {
+    updatePointer(e)
+    handleClick()
   })
 })
 
@@ -176,6 +187,7 @@ function clearScene() {
     })
   }
   fragments = []
+  meshMap.clear()
 }
 
 onDestroy(() => {
@@ -188,41 +200,7 @@ onDestroy(() => {
   renderer.dispose()
 })
 
-function frame(now: DOMHighResTimeStamp) {
-  const baseOrbitPeriod = 1200000 // ms
-  const baseRotationPeriod = 1200000 // ms
-
-  for (let ix = 0; ix < fragments.length; ix++) {
-    const fragment = fragments[ix]
-    if (!fragment.object) continue
-
-    const orbitAngle =
-      fragment.initialPhase + (now / (baseOrbitPeriod / fragment.translationSpeed)) * (2 * Math.PI)
-    fragment.object.position.copy(getPosition(fragment, orbitAngle))
-
-    const rotationAngleX =
-      (now / (baseRotationPeriod / fragment.rotationSpeed.x)) * (2 * Math.PI) +
-      fragment.initialRotation.x
-    const rotationAngleY =
-      (now / (baseRotationPeriod / fragment.rotationSpeed.y)) * (2 * Math.PI) +
-      fragment.initialRotation.y
-    const rotationAngleZ =
-      (now / (baseRotationPeriod / fragment.rotationSpeed.z)) * (2 * Math.PI) +
-      fragment.initialRotation.z
-    fragment.object.rotation.set(rotationAngleX, rotationAngleY, rotationAngleZ)
-  }
-
-  camera.position.set(
-    CAMERA_X - pointer.x * 0.05 * aspectRatio,
-    CAMERA_Y + pointer.y * 0.05,
-    CAMERA_Z,
-  )
-  pointLight.position.set(
-    CAMERA_X - pointer.x * 2.5 * aspectRatio,
-    CAMERA_Y + pointer.y * 2.5,
-    CAMERA_Z,
-  )
-
+function updateIntersection() {
   raycaster.setFromCamera(pointer, camera)
   const intersects = raycaster.intersectObjects(group.children, true)
 
@@ -237,7 +215,7 @@ function frame(now: DOMHighResTimeStamp) {
       animate(mouseover.material as _3.MeshPhysicalMaterial, {
         emissiveIntensity: 0.0,
         duration: 250,
-        easing: 'easeOutQuad',
+        easing: 'outQuad',
       })
       mouseover = null
       renderTarget.style.cursor = 'default'
@@ -248,10 +226,35 @@ function frame(now: DOMHighResTimeStamp) {
       animate(mouseover.material as _3.MeshPhysicalMaterial, {
         emissiveIntensity: 1.0,
         duration: 250,
-        easing: 'easeInQuad',
+        easing: 'inQuad',
       })
     }
   }
+}
+
+function frame(now: DOMHighResTimeStamp) {
+  for (let ix = 0; ix < fragments.length; ix++) {
+    const fragment = fragments[ix]
+    if (!fragment.object) continue
+
+    const orbitAngle = fragment.initialPhase + now * fragment.orbitSpeed * (2 * Math.PI)
+    fragment.object.position.copy(getPosition(fragment, orbitAngle))
+    fragment.object.rotateOnAxis(fragment.rotAxis, fragment.rotSpeed)
+  }
+
+  camera.position.set(
+    CAMERA_X - pointer.x * 0.05 * aspectRatio,
+    CAMERA_Y + pointer.y * 0.05,
+    CAMERA_Z,
+  )
+
+  pointLight.position.set(
+    CAMERA_X - pointer.x * 2.5 * aspectRatio,
+    CAMERA_Y + pointer.y * 2.5,
+    CAMERA_Z,
+  )
+
+  updateIntersection()
 
   renderer.render(scene, camera)
 }
@@ -320,15 +323,40 @@ $effect(() => {
     group.add(object)
 
     frag.object = object
+    meshMap.set(mesh, frag)
   }
 })
 
+function handleClick() {
+  if (!mouseover) return
+  const frag = meshMap.get(mouseover)
+  if (!frag) return
+  animate(frag, {
+    noiseH: frag.noiseH - 5,
+    noiseY: 0,
+    duration: 10000,
+    easing: 'inOutQuad',
+  })
+  const origRotSpeed = frag.rotSpeed
+  animate(frag, {
+    rotSpeed: origRotSpeed * 10,
+    duration: 5000,
+    easing: 'inOutQuad',
+    loop: 2,
+    alternate: true,
+    onComplete() {
+      frag.rotSpeed = origRotSpeed
+    },
+  })
+}
+
 function getPosition(fragment: Fragment, progress: number): _3.Vector3 {
-  const c = [fragment.noiseH, fragment.noiseV, fragment.noiseH]
+  const c = [0, fragment.noiseV, 0]
   const angle = aspectRatio >= 0.75 ? 0.3 : Math.atan(1 / aspectRatio)
 
-  const u = [50 * Math.cos(angle), -50 * Math.sin(angle), 0]
-  const v = [0, 0, 50]
+  const r = 50 + fragment.noiseH
+  const u = [r * Math.cos(angle), -r * Math.sin(angle), 0]
+  const v = [0, 0, r]
 
   return new _3.Vector3(
     c[0] + u[0] * Math.cos(progress) + v[0] * Math.sin(progress),
