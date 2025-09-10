@@ -37,17 +37,30 @@ function getTriangleShape(params: Fragment): _3.Shape {
   const { base, height, tip } = params
 
   const shape = new _3.Shape()
-  shape.moveTo(0, height)
-  shape.lineTo(tip, 0)
-  shape.lineTo(base, height)
-  shape.lineTo(0, height)
+  shape.moveTo(-base / 2, -height / 2)
+  shape.lineTo(base / 2, -height / 2)
+  shape.lineTo(-base / 2 + tip, height / 2)
+  shape.lineTo(-base / 2, -height / 2)
 
   return shape
 }
 
 function getLineGeometry(params: Fragment): LineGeometry {
   const { base, height, tip } = params
-  return new LineGeometry().setPositions([0, height, 0, tip, 0, 0, base, height, 0, 0, height, 0])
+  return new LineGeometry().setPositions([
+    -base / 2,
+    -height / 2,
+    0,
+    base / 2,
+    -height / 2,
+    0,
+    -base / 2 + tip,
+    height / 2,
+    0,
+    -base / 2,
+    -height / 2,
+    0,
+  ])
 }
 
 interface Fragment {
