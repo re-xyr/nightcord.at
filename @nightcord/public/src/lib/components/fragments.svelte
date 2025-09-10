@@ -6,6 +6,9 @@ import { innerWidth, innerHeight } from 'svelte/reactivity/window'
 
 import background from '$lib/assets/empty-sekai.png'
 import { browser } from '$app/environment'
+import { Line2 } from 'three/addons/lines/Line2.js'
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
 
 interface Props {
   count: number
@@ -41,14 +44,9 @@ function getTriangleShape(params: Fragment): _3.Shape {
   return shape
 }
 
-function getBufferGeometry(params: Fragment): _3.BufferGeometry {
+function getLineGeometry(params: Fragment): LineGeometry {
   const { base, height, tip } = params
-
-  return new _3.BufferGeometry().setFromPoints([
-    new _3.Vector3(0, height, 0),
-    new _3.Vector3(tip, 0, 0),
-    new _3.Vector3(base, height, 0),
-  ])
+  return new LineGeometry().setPositions([0, height, 0, tip, 0, 0, base, height, 0, 0, height, 0])
 }
 
 interface Fragment {
@@ -281,11 +279,12 @@ $effect(() => {
     object.add(mesh)
 
     if (frag.hasOutline) {
-      const geometry = getBufferGeometry(frag)
-      const outlineMaterial = new _3.LineBasicMaterial({
+      const geometry = getLineGeometry(frag)
+      const outlineMaterial = new LineMaterial({
+        linewidth: 2, // CSS pixels
         color: 0xffffff,
       })
-      const outline = new _3.LineLoop(geometry, outlineMaterial)
+      const outline = new Line2(geometry, outlineMaterial)
       object.add(outline)
       outline.rotateZ(0.1)
     }
