@@ -22,7 +22,7 @@ let mouseover: _3.Mesh | null = null
 const raycaster = new _3.Raycaster()
 const pointer = new _3.Vector2()
 
-let renderTarget: HTMLElement
+let renderTarget: HTMLCanvasElement
 
 let scene: _3.Scene
 let camera: _3.PerspectiveCamera
@@ -150,6 +150,7 @@ onMount(() => {
 
   camera = new _3.PerspectiveCamera(/*fov=*/ 105, /*aspect=*/ 1.0, /*near=*/ 0.01, /*far=*/ 200)
   renderer = new _3.WebGLRenderer({
+    canvas: renderTarget,
     antialias: true,
     alpha: true,
   })
@@ -158,9 +159,6 @@ onMount(() => {
 
   camera.position.set(CAMERA_X, CAMERA_Y, CAMERA_Z)
   camera.lookAt(0, 0, 0)
-
-  renderTarget.appendChild(renderer.domElement)
-  renderer.domElement.style.background = `url("${background}") center center / cover no-repeat`
 
   renderer.setAnimationLoop(frame)
 })
@@ -242,10 +240,10 @@ function frame(now: DOMHighResTimeStamp) {
         easing: 'easeOutQuad',
       })
       mouseover = null
-      renderer.domElement.style.cursor = 'default'
+      renderTarget.style.cursor = 'default'
     }
     if (newIntersect) {
-      renderer.domElement.style.cursor = 'pointer'
+      renderTarget.style.cursor = 'pointer'
       mouseover = newIntersect
       animate(mouseover.material as _3.MeshPhysicalMaterial, {
         emissiveIntensity: 1.0,
@@ -340,4 +338,10 @@ function getPosition(fragment: Fragment, progress: number): _3.Vector3 {
 }
 </script>
 
-<div bind:this={renderTarget}></div>
+<div class="h-dvh w-dvw overflow-hidden">
+  <canvas
+    bind:this={renderTarget}
+    style:background="url('{background}') center center / cover no-repeat"
+    class="h-0 w-0"
+  ></canvas>
+</div>
