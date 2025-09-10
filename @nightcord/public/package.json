@@ -29,6 +29,7 @@
     "@inlang/paraglide-js": "catalog:",
     "@nightcord/shared": "workspace:^",
     "@sveltejs/kit": "catalog:",
+    "animejs": "catalog:",
     "bits-ui": "catalog:",
     "drizzle-orm": "catalog:",
     "svelte": "catalog:",

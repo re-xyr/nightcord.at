@@ -9,6 +9,7 @@ import { browser } from '$app/environment'
 import { Line2 } from 'three/addons/lines/Line2.js'
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
+import { animate } from 'animejs'
 
 interface Props {
   count: number
@@ -148,7 +149,7 @@ onMount(() => {
   renderTarget.appendChild(renderer.domElement)
   renderer.domElement.style.background = `url("${background}") center center / cover no-repeat`
 
-  renderer.setAnimationLoop(animate)
+  renderer.setAnimationLoop(frame)
 })
 
 function clearScene() {
@@ -176,7 +177,7 @@ onDestroy(() => {
   renderer.dispose()
 })
 
-function animate(now: DOMHighResTimeStamp) {
+function frame(now: DOMHighResTimeStamp) {
   const baseOrbitPeriod = 1200000 // ms
   const baseRotationPeriod = 1200000 // ms
 
@@ -211,23 +212,35 @@ function animate(now: DOMHighResTimeStamp) {
     CAMERA_Z,
   )
 
-  // raycaster.setFromCamera(pointer, camera)
-  // const intersects = raycaster.intersectObjects(group.children, true)
+  raycaster.setFromCamera(pointer, camera)
+  const intersects = raycaster.intersectObjects(group.children, true)
 
-  // if (mouseover) {
-  //   ;(mouseover.material as _3.MeshPhysicalMaterial).emissive.set(0x000000)
-  //   mouseover = null
-  // }
-  // if (intersects.length > 0) {
-  //   const newIntersect = intersects[0].object
-  //   if (newIntersect instanceof _3.Mesh) {
-  //     const material = newIntersect.material as _3.MeshPhysicalMaterial
+  const newIntersect = intersects
+    .map(i => i.object)
+    .find(obj => obj instanceof _3.Mesh && obj.material instanceof _3.MeshPhysicalMaterial) as
+    | _3.Mesh
+    | undefined
 
-  //     mouseover = newIntersect
-  //     material.emissive.set(0xffffff)
-  //     material.emissiveIntensity = 0.25
-  //   }
-  // }
+  if (newIntersect !== mouseover) {
+    if (mouseover) {
+      animate(mouseover.material as _3.MeshPhysicalMaterial, {
+        emissiveIntensity: 0.0,
+        duration: 250,
+        easing: 'easeOutQuad',
+      })
+      mouseover = null
+      renderer.domElement.style.cursor = 'default'
+    }
+    if (newIntersect) {
+      renderer.domElement.style.cursor = 'pointer'
+      mouseover = newIntersect
+      animate(mouseover.material as _3.MeshPhysicalMaterial, {
+        emissiveIntensity: 1.0,
+        duration: 250,
+        easing: 'easeInQuad',
+      })
+    }
+  }
 
   renderer.render(scene, camera)
 }
@@ -272,6 +285,8 @@ $effect(() => {
       opacity: 0.5,
       roughness: 0.0,
       metalness: 0.0,
+      emissive: new _3.Color(0xffffff),
+      emissiveIntensity: 0.0,
     })
     const mesh = new _3.Mesh(geometry, material)
     mesh.castShadow = true
