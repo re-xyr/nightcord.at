@@ -72,6 +72,7 @@ interface Fragment {
   initialPhase: number
   initialRotation: _3.Euler
   rotAxis: _3.Vector3
+  initialRotSpeed: number
   rotSpeed: number
   orbitSpeed: number
   noiseH: number
@@ -95,6 +96,7 @@ function randomFragment(): Fragment {
     base = unif(0, 3.2)
     height = unif(0, 3.2)
   }
+  const rotSpeed = unif(0, 0.001)
   return {
     base,
     height,
@@ -103,7 +105,8 @@ function randomFragment(): Fragment {
     initialPhase: unif(0, 2 * Math.PI),
     initialRotation: new _3.Euler(unif(0, 2 * Math.PI), unif(0, 2 * Math.PI), unif(0, 2 * Math.PI)),
     rotAxis: new _3.Vector3(unif(-1, 1), unif(-1, 1), unif(-1, 1)).normalize(),
-    rotSpeed: unif(0, 0.001),
+    initialRotSpeed: rotSpeed,
+    rotSpeed,
     orbitSpeed: unif(0, 0.000003),
     noiseH: unif(-5, 5),
     noiseV: unif(-5, 5),
@@ -329,24 +332,16 @@ $effect(() => {
 
 function handleClick() {
   if (!mouseover) return
+
   const frag = meshMap.get(mouseover)
   if (!frag) return
+
+  frag.rotSpeed = frag.initialRotSpeed * 10
   animate(frag, {
     noiseH: frag.noiseH - 5,
-    noiseY: 0,
+    rotSpeed: frag.initialRotSpeed,
     duration: 10000,
     easing: 'inOutQuad',
-  })
-  const origRotSpeed = frag.rotSpeed
-  animate(frag, {
-    rotSpeed: origRotSpeed * 10,
-    duration: 5000,
-    easing: 'inOutQuad',
-    loop: 2,
-    alternate: true,
-    onComplete() {
-      frag.rotSpeed = origRotSpeed
-    },
   })
 }
 
