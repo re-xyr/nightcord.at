@@ -3,7 +3,7 @@
   "useTabs": false,
   "semi": false,
   "singleQuote": true,
-  "arrowParens": "avoid",
+  "arrowParens": "alwayss",
   "printWidth": 100,
   "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   "overrides": [
@@ -15,5 +15,5 @@
     }
   ],
   "svelteIndentScriptAndStyle": false,
-  "tailwindStylesheet": "./src/app.css"
+  "tailwindStylesheet": "./@nightcord/public/src/app.css"
 }
