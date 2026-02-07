@@ -7,7 +7,7 @@ import type { TurnstileObject } from 'turnstile-types'
 import Fragments from '$lib/components/fragments.svelte'
 import { Fragment } from '$lib/fragment'
 import * as _3 from 'three'
-import { Dialog } from 'bits-ui'
+import { Dialog, Popover } from 'bits-ui'
 
 import {
   LoaderCircle,
@@ -22,7 +22,7 @@ import {
 import { onMount } from 'svelte'
 import { toast } from 'svelte-sonner'
 import { recordView } from '$lib/api/record-view.remote'
-import { randomSelect } from '$lib/util'
+import { cn, randomSelect } from '$lib/util'
 import { blackbodyColor, toCssString } from '$lib/black-body'
 
 let nickname = $state('')
@@ -141,7 +141,11 @@ function truncate(str: string, maxLength: number) {
 
 const transientTarget = new EventTarget()
 
-let overlay: HTMLDivElement | null = $state(null)
+let overlay: HTMLDivElement = $state(null!)
+let submitButton: HTMLButtonElement = $state(null!)
+
+let turnstileIsActive = $state(false)
+const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
 </script>
 
 <Fragments
@@ -183,11 +187,11 @@ let overlay: HTMLDivElement | null = $state(null)
 <Dialog.Root bind:open={postDialogOpen}>
   <Dialog.Portal>
     <Dialog.Overlay
-      class="fixed inset-0 z-50 bg-black/50 bg-radial from-black from-10% to-transparent data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      class="fixed inset-0 z-40 bg-black/50 bg-radial from-black from-10% to-transparent data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     />
     <Dialog.Content
       interactOutsideBehavior="ignore"
-      class="dialog fixed top-[50%] left-[50%] z-50 flex translate-x-[-50%] translate-y-[-50%] items-center justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      class="dialog fixed top-[50%] left-[50%] z-40 flex translate-x-[-50%] translate-y-[-50%] justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     >
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
         <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
@@ -219,6 +223,7 @@ let overlay: HTMLDivElement | null = $state(null)
           </Dialog.Close>
 
           <button
+            bind:this={submitButton}
             onclick={initiateSubmit}
             disabled={!submittable}
             class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
@@ -245,19 +250,34 @@ let overlay: HTMLDivElement | null = $state(null)
           </button>
         </div>
       </div>
-
-      <Turnstile
-        siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
-        appearance="interaction-only"
-        execution="execute"
-        theme="dark"
-        bind:turnstile
-        bind:widgetId
-        on:callback={(e) => finishSubmit(e.detail.token)}
-      />
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
+
+<Popover.Root open={shouldShowTurnstile}>
+  <Popover.Content
+    forceMount
+    interactOutsideBehavior="ignore"
+    escapeKeydownBehavior="ignore"
+    customAnchor={submitButton}
+    class={cn(
+      'z-50 m-7 rounded bg-black px-2 pt-2 pb-1 text-white shadow-lg shadow-white/5 transition-opacity',
+      shouldShowTurnstile ? 'opacity-100' : 'pointer-events-none opacity-0',
+    )}
+  >
+    <Turnstile
+      siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
+      appearance="always"
+      execution="execute"
+      theme="dark"
+      bind:turnstile
+      bind:widgetId
+      on:callback={(e) => finishSubmit(e.detail.token)}
+      on:before-interactive={() => (turnstileIsActive = true)}
+      on:after-interactive={() => (turnstileIsActive = false)}
+    />
+  </Popover.Content>
+</Popover.Root>
 
 <Dialog.Root bind:open={viewDialogOpen}>
   <Dialog.Portal>
