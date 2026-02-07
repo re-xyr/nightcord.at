@@ -80,8 +80,9 @@ export const submitPost = command(
     }
     console.log('Text analysis result:', analysis)
 
-    if (analysis.verdict === 'hard-reject' || analysis.verdict === 'policy-reject') {
-      // TODO: Maybe treat policy-rejects differently later, for now just reject them outright
+    if (analysis.verdict !== 'accept') {
+      // TODO: Maybe treat policy-rejects differently later, for now just silently discard them
+      // outright
       return { success: true }
     }
 
@@ -93,6 +94,7 @@ export const submitPost = command(
       authorCity: locals.visitor.city ?? 'Unknown',
       authorRegion: locals.visitor.region ?? 'Unknown',
       authorCountry: locals.visitor.country ?? 'ZZ',
+      inferredSentiment: analysis.sentiment,
     })
     return { success: true }
   },

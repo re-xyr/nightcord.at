@@ -4,6 +4,7 @@ packages:
 catalog:
   '@cloudflare/workers-types': ^4.20260207.0
   '@fontsource-variable/eb-garamond': ^5.2.7
+  '@huggingface/inference': ^4.13.11
   '@inlang/paraglide-js': ^2.10.0
   '@libsql/client': ^0.17.0
   '@sveltejs/adapter-cloudflare': ^7.2.6

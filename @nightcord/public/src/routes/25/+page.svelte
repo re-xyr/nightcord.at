@@ -22,6 +22,8 @@ import {
 import { onMount } from 'svelte'
 import { toast } from 'svelte-sonner'
 import { recordView } from '$lib/api/record-view.remote'
+import { randomSelect } from '$lib/util'
+import { blackbodyColor, toCssString } from '$lib/black-body'
 
 let nickname = $state('')
 let message = $state('')
@@ -263,17 +265,23 @@ let overlay: HTMLDivElement | null = $state(null)
       class="fixed inset-0 z-50 bg-black/50 bg-radial from-black from-10% to-transparent data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     />
     <Dialog.Content
-      class="dialog fixed top-[50%] left-[50%] z-50 flex max-w-full translate-x-[-50%] translate-y-[-50%] items-center justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      class="dialog fixed top-[50%] left-[50%] z-50 flex max-w-full translate-x-[-50%] translate-y-[-50%] items-center justify-center overflow-clip bg-black p-5 shadow-2xl data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      style="--tw-shadow-color: {toCssString(blackbodyColor(-(viewing?.inferredSentiment ?? 0)))}"
     >
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
         <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
 
         {#if viewing}
+          <code
+            class="absolute -top-2 -right-2 pl-0.5 text-xs tracking-widest opacity-33"
+            role="presentation">{viewing.inferredSentiment.toFixed(16)}</code
+          >
+
           <Dialog.Title class="grow pl-12 text-3xl">
             {#if viewing.nickname}
               <span class="font-semibold">{viewing.nickname}</span>
             {:else}
-              <i>An anonymous voice</i>
+              <i>An anonymous {randomSelect(['voice', 'wanderer', 'traveler'])}</i>
             {/if}
             said:
           </Dialog.Title>

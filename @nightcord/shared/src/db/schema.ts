@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core'
 
 export const posts = sqliteTable('post', {
   id: integer().primaryKey(),
@@ -17,6 +17,8 @@ export const posts = sqliteTable('post', {
 
   loads: integer().notNull().default(0),
   views: integer().notNull().default(0),
+
+  inferredSentiment: real().notNull().default(0), // -1 to 1, negative to positive
 })
 
 export const bannedIps = sqliteTable('bannedIp', {

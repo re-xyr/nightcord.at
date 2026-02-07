@@ -1,15 +1,17 @@
 import { env } from '$env/dynamic/private'
 import { singleton } from '$lib/util'
+import { InferenceClient } from '@huggingface/inference'
 import OpenAI from 'openai'
 
-type RejectVerdict = 'policy-reject' | 'hard-reject'
-type RejectReason = keyof OpenAI.Moderation.Categories
+export type RejectVerdict = 'policy-reject' | 'hard-reject'
+export type RejectReason = keyof OpenAI.Moderation.Categories
 
 export type TextAnalysis =
-  | { verdict: 'accept' }
+  | { verdict: 'accept'; sentiment: number }
   | { verdict: RejectVerdict; reasons: RejectReason[] }
 
 const openai = singleton(() => new OpenAI({ apiKey: env.N25_OPENAI_APIKEY }))
+const hf = singleton(() => new InferenceClient(env.N25_HF_APIKEY))
 
 const hardRejectCategories: RejectReason[] = [
   'sexual/minors',
@@ -57,7 +59,23 @@ export async function analyzeText(content: string): Promise<TextAnalysis | null>
       return { verdict: 'policy-reject', reasons: policyRejectReasons }
     }
 
-    return { verdict: 'accept' }
+    // proceed to sentiment analysis
+    let sentiment: number
+
+    try {
+      const result = await hf().textClassification({
+        provider: 'hf-inference',
+        model: 'distilbert-base-uncased-finetuned-sst-2-english',
+        inputs: content,
+      })
+      sentiment = result[0].label === 'POSITIVE' ? result[0].score : -result[0].score
+    } catch (error) {
+      console.error('Error calling Hugging Face Inference API:', error)
+      // If the sentiment analysis fails, we don't want to reject the post outright, so we just log the error and return a neutral sentiment
+      sentiment = 0
+    }
+
+    return { verdict: 'accept', sentiment }
   } catch (error) {
     console.error('Error calling OpenAI Moderation API:', error)
     return null

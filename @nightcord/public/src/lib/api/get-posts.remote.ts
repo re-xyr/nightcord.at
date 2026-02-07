@@ -16,6 +16,7 @@ function makePostView(post: typeof posts.$inferSelect) {
     authorCountry: post.authorCountry,
     loads: post.loads,
     views: post.views,
+    inferredSentiment: post.inferredSentiment,
   }
 }
 

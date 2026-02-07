@@ -24,3 +24,7 @@ export function singleton<T>(make: () => T): () => T {
     return instance
   }
 }
+
+export function randomSelect<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
