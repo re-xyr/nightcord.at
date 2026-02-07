@@ -10,6 +10,7 @@ export const handle: Handle = ({ event, resolve }) => {
         ? (getMockDb() as unknown as Database)
         : getDb(event.platform!.env.DB),
     postRateLimiter: event.platform!.env.POST_RATE_LIMITER,
+    viewRateLimiter: event.platform!.env.VIEW_RATE_LIMITER,
     visitor: {
       ip:
         N25_PUBLIC_DEPLOYMENT_ENV === 'development'

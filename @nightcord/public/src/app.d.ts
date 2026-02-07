@@ -1,4 +1,5 @@
 import type { Database } from '@nightcord/shared/db'
+import type { ServiceEvent } from '@nightcord/shared/events'
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
@@ -8,6 +9,7 @@ declare global {
     interface Locals {
       db: Database
       postRateLimiter: RateLimit
+      viewRateLimiter: RateLimit
       visitor: {
         ip: string | null
         userAgent: string | null

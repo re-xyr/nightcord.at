@@ -14,6 +14,9 @@ export const posts = sqliteTable('post', {
   authorCity: text().notNull(),
   authorRegion: text().notNull(),
   authorCountry: text().notNull(),
+
+  loads: integer().notNull().default(0),
+  views: integer().notNull().default(0),
 })
 
 export const bannedIps = sqliteTable('bannedIp', {

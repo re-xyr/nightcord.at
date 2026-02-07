@@ -6,6 +6,7 @@ import { posts } from '@nightcord/shared/db/schema'
 import { env } from '$env/dynamic/private'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
 import { Address4, Address6 } from 'ip-address'
+import { getRateLimitKey } from '$lib/server/util'
 
 const zTurnstileApiResponse = z.object({
   success: z.boolean(),
@@ -63,14 +64,9 @@ export const submitPost = command(
       return { success: false, error: 'Turnstile validation failed. Please try again.' }
     }
 
-    let rateLimitKey: string
-    try {
-      rateLimitKey = new Address4(locals.visitor.ip).correctForm()
-    } catch {
-      rateLimitKey = new Address6(locals.visitor.ip).mask(64)
-    }
-
-    const { success } = await locals.postRateLimiter.limit({ key: rateLimitKey })
+    const { success } = await locals.postRateLimiter.limit({
+      key: getRateLimitKey(locals.visitor.ip),
+    })
     if (!success) {
       return {
         success: false,

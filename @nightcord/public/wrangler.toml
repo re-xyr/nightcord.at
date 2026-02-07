@@ -30,8 +30,16 @@ namespace_id = "1"
 limit = 2
 period = 60
 
+[[ratelimits]]
+name = "VIEW_RATE_LIMITER"
+namespace_id = "2"
+
+[ratelimits.simple]
+limit = 5
+period = 10
+
 [vars]
-N25_PUBLIC_DEPLOYMENT_ENV = "prod"
+N25_PUBLIC_DEPLOYMENT_ENV = "production"
 N25_PUBLIC_CF_TURNSTILE_SITEKEY = "0x4AAAAAABzvp9Ei968n3hWk"
 
 [observability]

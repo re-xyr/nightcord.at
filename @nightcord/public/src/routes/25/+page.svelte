@@ -9,9 +9,19 @@ import { Fragment } from '$lib/fragment'
 import * as _3 from 'three'
 import { Dialog } from 'bits-ui'
 
-import { LoaderCircle, Ellipsis, ArrowRight, Plus, MoveDown, Undo2 } from 'lucide-svelte'
+import {
+  LoaderCircle,
+  Ellipsis,
+  ArrowRight,
+  Plus,
+  MoveDown,
+  Undo2,
+  Eye,
+  RefreshCcw,
+} from 'lucide-svelte'
 import { onMount } from 'svelte'
 import { toast } from 'svelte-sonner'
+import { recordView } from '$lib/api/record-view.remote'
 
 let nickname = $state('')
 let message = $state('')
@@ -108,6 +118,9 @@ function handleClick(id: number, _frag: Fragment) {
   if (posts.length === 0) return
   viewing = posts[id % posts.length]
   viewDialogOpen = true
+  recordView({ postId: viewing.id }).catch((e) => {
+    console.error('Failed to record view:', e)
+  })
 }
 
 let viewing: PostView | null = $state(null)
@@ -248,7 +261,7 @@ let overlay: HTMLDivElement | null = $state(null)
       class="fixed inset-0 z-50 bg-black/50 bg-radial from-black from-10% to-transparent data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     />
     <Dialog.Content
-      class="dialog fixed top-[50%] left-[50%] z-50 flex translate-x-[-50%] translate-y-[-50%] items-center justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      class="dialog fixed top-[50%] left-[50%] z-50 flex max-w-full translate-x-[-50%] translate-y-[-50%] items-center justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     >
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
         <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
@@ -265,8 +278,24 @@ let overlay: HTMLDivElement | null = $state(null)
 
           <p class="text-lg whitespace-pre-line">{viewing.content}</p>
 
-          <div class="text-right text-sm font-medium opacity-75">
-            {viewing.createdAt.toLocaleString()} in {viewing.authorCity}, {viewing.authorRegion}, {viewing.authorCountry}
+          <div
+            class="flex flex-row flex-wrap items-center justify-end gap-1 text-end text-sm font-medium opacity-75"
+          >
+            <span>{viewing.createdAt.toLocaleString()}</span>
+            <span>in {viewing.authorCity}, {viewing.authorRegion}, {viewing.authorCountry}</span>
+            <div class="flex flex-row items-center gap-1">
+              <span
+                class="contents"
+                title="Number of times this message has been viewed (expanded)"
+              >
+                ‧ {viewing.views}
+                <Eye class="size-4" />
+              </span>
+              <span class="contents" title="Number of times this message has been loaded">
+                ‧ {viewing.loads}
+                <RefreshCcw class="size-3.5" />
+              </span>
+            </div>
           </div>
 
           <div class="flex flex-col-reverse sm:flex-row sm:items-center">
