@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private'
+import { singleton } from '$lib/util'
 import OpenAI from 'openai'
 
 type RejectVerdict = 'policy-reject' | 'hard-reject'
@@ -8,7 +9,7 @@ export type TextAnalysis =
   | { verdict: 'accept' }
   | { verdict: RejectVerdict; reasons: RejectReason[] }
 
-const openai = new OpenAI({ apiKey: env.N25_OPENAI_APIKEY })
+const openai = singleton(() => new OpenAI({ apiKey: env.N25_OPENAI_APIKEY }))
 
 const hardRejectCategories: RejectReason[] = [
   'sexual/minors',
@@ -27,7 +28,7 @@ const policyRejectThresholds: Partial<Record<RejectReason, number>> = {
 
 export async function analyzeText(content: string): Promise<TextAnalysis | null> {
   try {
-    const moderation = await openai.moderations.create({
+    const moderation = await openai().moderations.create({
       model: 'omni-moderation-latest',
       input: content,
     })

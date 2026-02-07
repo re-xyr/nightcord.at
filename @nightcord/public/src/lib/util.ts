@@ -14,3 +14,13 @@ export function bernoulli(p: number): boolean {
 export function cn(...classes: Parameters<typeof clsx>): string {
   return twMerge(clsx(...classes))
 }
+
+export function singleton<T>(make: () => T): () => T {
+  let instance: T | null = null
+  return () => {
+    if (!instance) {
+      instance = make()
+    }
+    return instance
+  }
+}
