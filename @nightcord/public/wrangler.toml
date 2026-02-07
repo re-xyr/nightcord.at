@@ -22,6 +22,14 @@ database_name = "nightcord_at_25"
 database_id = "49cea6dc-18ac-429f-91de-01fd9e8649fb"
 migrations_dir = "../shared/drizzle/"
 
+[[ratelimits]]
+name = "POST_RATE_LIMITER"
+namespace_id = "1"
+
+[ratelimits.simple]
+limit = 2
+period = 60
+
 [vars]
 N25_PUBLIC_DEPLOYMENT_ENV = "prod"
 N25_PUBLIC_CF_TURNSTILE_SITEKEY = "0x4AAAAAABzvp9Ei968n3hWk"

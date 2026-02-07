@@ -30,3 +30,6 @@ vite.config.ts.timestamp-*
 
 # SQLite
 *.db
+
+# Wrangler
+worker-configuration.d.ts

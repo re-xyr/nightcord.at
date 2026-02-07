@@ -6,17 +6,44 @@ import { innerWidth, innerHeight } from 'svelte/reactivity/window'
 
 import background from '$lib/assets/empty-sekai.png'
 import { browser } from '$app/environment'
-import { Line2 } from 'three/addons/lines/Line2.js'
-import { LineGeometry } from 'three/addons/lines/LineGeometry.js'
-import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import { animate } from 'animejs'
 import { on } from 'svelte/events'
+import { Fragment } from '$lib/fragment'
+import { animate } from 'animejs'
 
 interface Props {
   count: number
+  onpointermove?: (event: MouseEvent) => void
+  onmouseenter?: (id: number, frag: Fragment) => void | boolean
+  onmouseleave?: (id: number, frag: Fragment) => void | boolean
+  onclick?: (id: number, frag: Fragment) => void | boolean
+  transient?: (listener: () => void) => void
 }
 
-const { count }: Props = $props()
+const { count, onpointermove, onmouseenter, onmouseleave, onclick, transient }: Props = $props()
+
+onMount(() => {
+  transient?.(() => {
+    console.log('Transient event received, refreshing fragments')
+    const frag = Fragment.make(aspectRatio)
+    frag.orbit = (3 * Math.PI) / 2
+    frag.offsetH = 5
+    frag.offsetV = 0
+    frag.spinSpeed = 0.001
+    transientFragment = frag
+    group.add(frag.object)
+
+    animate(frag, {
+      offsetH: -100,
+      spinSpeed: 0.0001,
+      duration: 30000,
+      onComplete() {
+        group.remove(frag.object)
+        transientFragment = null
+        frag.dispose()
+      },
+    })
+  })
+})
 
 let mouseover: _3.Mesh | null = null
 
@@ -24,6 +51,7 @@ const raycaster = new _3.Raycaster()
 const pointer = new _3.Vector2()
 
 let renderTarget: HTMLCanvasElement
+let backgroundEl: HTMLImageElement
 
 let scene: _3.Scene
 let camera: _3.PerspectiveCamera
@@ -34,109 +62,32 @@ let hemisphereLight: _3.HemisphereLight
 let directionalLight: _3.DirectionalLight
 let pointLight: _3.PointLight
 
-function getTriangleShape(params: Fragment): _3.Shape {
-  const { base, height, tip } = params
-
-  const shape = new _3.Shape()
-  shape.moveTo(-base / 2, -height / 2)
-  shape.lineTo(base / 2, -height / 2)
-  shape.lineTo(-base / 2 + tip, height / 2)
-  shape.lineTo(-base / 2, -height / 2)
-
-  return shape
-}
-
-function getLineGeometry(params: Fragment): LineGeometry {
-  const { base, height, tip } = params
-  return new LineGeometry().setPositions([
-    -base / 2,
-    -height / 2,
-    0,
-    base / 2,
-    -height / 2,
-    0,
-    -base / 2 + tip,
-    height / 2,
-    0,
-    -base / 2,
-    -height / 2,
-    0,
-  ])
-}
-
-interface Fragment {
-  base: number
-  height: number
-  tip: number
-  hue: number
-  initialPhase: number
-  initialRotation: _3.Euler
-  rotAxis: _3.Vector3
-  initialRotSpeed: number
-  rotSpeed: number
-  orbitSpeed: number
-  noiseH: number
-  noiseV: number
-  hasOutline: boolean
-  object: _3.Object3D | null
-}
-
-function unif(min: number, max: number): number {
-  return Math.random() * (max - min) + min
-}
-
-function bernoulli(p: number): boolean {
-  return Math.random() < p
-}
-
-function randomFragment(): Fragment {
-  let base: number = 0
-  let height: number = 0
-  while (base * height < 0.16) {
-    base = unif(0, 3.2)
-    height = unif(0, 3.2)
-  }
-  const rotSpeed = unif(0, 0.001)
-  return {
-    base,
-    height,
-    tip: unif(0, base),
-    hue: unif(265, 360),
-    initialPhase: unif(0, 2 * Math.PI),
-    initialRotation: new _3.Euler(unif(0, 2 * Math.PI), unif(0, 2 * Math.PI), unif(0, 2 * Math.PI)),
-    rotAxis: new _3.Vector3(unif(-1, 1), unif(-1, 1), unif(-1, 1)).normalize(),
-    initialRotSpeed: rotSpeed,
-    rotSpeed,
-    orbitSpeed: unif(0, 0.000003),
-    noiseH: unif(-5, 5),
-    noiseV: unif(-5, 5),
-    hasOutline: bernoulli(0.25),
-    object: null,
-  }
-}
-
+let transientFragment: Fragment | null = null
 let fragments: Fragment[] = []
-let meshMap: Map<_3.Mesh, Fragment> = new Map()
+let meshMap: Map<_3.Mesh, number> = new Map()
 
 const CAMERA_X = 0
 const CAMERA_Y = 1.5
 const CAMERA_Z = -55
 
-let aspectRatio = 1.0
+let aspectRatio = { current: 1.0 }
 let viewportHeight = 512
 let viewportWidth = 512
 
-onMount(() => {
-  const updatePointer = (event: MouseEvent) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
-    updateIntersection()
-  }
+const updatePointer = (event: MouseEvent) => {
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
 
-  on(window, 'pointermove', updatePointer)
-  on(window, 'click', e => {
+  if (backgroundEl)
+    backgroundEl.style.translate = `${-50 + pointer.x * 0.1}% ${-50 - pointer.y * 0.1}%`
+
+  updateIntersection()
+}
+
+onMount(() => {
+  on(window, 'pointermove', (e) => {
     updatePointer(e)
-    handleClick()
+    onpointermove?.(e)
   })
 })
 
@@ -179,16 +130,7 @@ onMount(() => {
 
 function clearScene() {
   group.clear()
-
-  for (const frag of fragments) {
-    if (!frag.object) continue
-    frag.object.traverse(child => {
-      if (child instanceof _3.Mesh || child instanceof _3.Line) {
-        child.geometry.dispose()
-        child.material.dispose()
-      }
-    })
-  }
+  for (const frag of fragments) frag.dispose()
   fragments = []
   meshMap.clear()
 }
@@ -208,29 +150,29 @@ function updateIntersection() {
   const intersects = raycaster.intersectObjects(group.children, true)
 
   const newIntersect = intersects
-    .map(i => i.object)
-    .find(obj => obj instanceof _3.Mesh && obj.material instanceof _3.MeshPhysicalMaterial) as
+    .map((i) => i.object)
+    .find((obj) => obj instanceof _3.Mesh && obj.material instanceof _3.MeshPhysicalMaterial) as
     | _3.Mesh
     | undefined
 
   if (newIntersect !== mouseover) {
     if (mouseover) {
-      animate(mouseover.material as _3.MeshPhysicalMaterial, {
-        emissiveIntensity: 0.0,
-        duration: 250,
-        easing: 'outQuad',
-      })
+      const fragIndex = meshMap.get(mouseover)
+      if (fragIndex != null) {
+        const frag = fragments[fragIndex]
+        if (onmouseleave?.(fragIndex, frag) !== false) frag.unhover()
+      }
       mouseover = null
       renderTarget.style.cursor = 'default'
     }
     if (newIntersect) {
       renderTarget.style.cursor = 'pointer'
       mouseover = newIntersect
-      animate(mouseover.material as _3.MeshPhysicalMaterial, {
-        emissiveIntensity: 1.0,
-        duration: 250,
-        easing: 'inQuad',
-      })
+      const fragIndex = meshMap.get(mouseover)
+      if (fragIndex != null) {
+        const frag = fragments[fragIndex]
+        if (onmouseenter?.(fragIndex, frag) !== false) frag.hover()
+      }
     }
   }
 }
@@ -238,21 +180,21 @@ function updateIntersection() {
 function frame(now: DOMHighResTimeStamp) {
   for (let ix = 0; ix < fragments.length; ix++) {
     const fragment = fragments[ix]
-    if (!fragment.object) continue
+    fragment.advance(now)
+  }
 
-    const orbitAngle = fragment.initialPhase + now * fragment.orbitSpeed * (2 * Math.PI)
-    fragment.object.position.copy(getPosition(fragment, orbitAngle))
-    fragment.object.rotateOnAxis(fragment.rotAxis, fragment.rotSpeed)
+  if (transientFragment) {
+    transientFragment.update(now)
   }
 
   camera.position.set(
-    CAMERA_X - pointer.x * 0.05 * aspectRatio,
+    CAMERA_X - pointer.x * 0.05 * aspectRatio.current,
     CAMERA_Y + pointer.y * 0.05,
     CAMERA_Z,
   )
 
   pointLight.position.set(
-    CAMERA_X - pointer.x * 2.5 * aspectRatio,
+    CAMERA_X - pointer.x * 2.5 * aspectRatio.current,
     CAMERA_Y + pointer.y * 2.5,
     CAMERA_Z,
   )
@@ -267,9 +209,18 @@ $effect(() => {
   if (!innerWidth.current || !innerHeight.current) return
   viewportHeight = innerHeight.current
   viewportWidth = innerWidth.current
-  aspectRatio = viewportWidth / viewportHeight
+  aspectRatio.current = viewportWidth / viewportHeight
 
-  camera.aspect = aspectRatio
+  console.log(
+    'Updating viewport to',
+    viewportWidth,
+    'x',
+    viewportHeight,
+    'with aspect ratio',
+    aspectRatio,
+  )
+
+  camera.aspect = aspectRatio.current
   camera.updateProjectionMatrix()
 
   renderer.setSize(viewportWidth, viewportHeight)
@@ -279,92 +230,49 @@ $effect(() => {
 
 // Depends: count
 $effect(() => {
-  clearScene()
-  for (let ix = 0; ix < count; ix++) {
-    fragments.push(randomFragment())
+  console.log('Updating fragments to count =', count)
+
+  while (fragments.length > count) {
+    const frag = fragments.pop()
+    if (!frag) break
+    frag.dispose()
+    group.remove(frag.object)
+    meshMap.delete(frag.mesh)
   }
 
-  for (const frag of fragments) {
-    const object = new _3.Object3D()
-
-    const shape = getTriangleShape(frag)
-    const geometry = new _3.ExtrudeGeometry(shape, {
-      depth: 0.03,
-      bevelEnabled: true,
-      bevelSegments: 1,
-      bevelThickness: 0.02,
-      bevelSize: 0.02,
-    })
-    const material = new _3.MeshPhysicalMaterial({
-      color: new _3.Color().setHSL(Math.random() * 0.25 + 0.5, 0.5, 0.7),
-      side: _3.DoubleSide,
-      transparent: true,
-      opacity: 0.5,
-      roughness: 0.0,
-      metalness: 0.0,
-      emissive: new _3.Color(0xffffff),
-      emissiveIntensity: 0.0,
-    })
-    const mesh = new _3.Mesh(geometry, material)
-    mesh.castShadow = true
-    mesh.receiveShadow = true
-    object.add(mesh)
-
-    if (frag.hasOutline) {
-      const geometry = getLineGeometry(frag)
-      const outlineMaterial = new LineMaterial({
-        linewidth: 2, // CSS pixels
-        color: 0xffffff,
-      })
-      const outline = new Line2(geometry, outlineMaterial)
-      object.add(outline)
-      outline.rotateZ(0.1)
-    }
-
-    object.position.copy(getPosition(frag, frag.initialPhase))
-    object.rotation.copy(frag.initialRotation)
-    group.add(object)
-
-    frag.object = object
-    meshMap.set(mesh, frag)
+  while (fragments.length < count) {
+    const frag = Fragment.make(aspectRatio)
+    fragments.push(frag)
+    group.add(frag.object)
+    meshMap.set(frag.mesh, fragments.length - 1)
   }
 })
 
 function handleClick() {
   if (!mouseover) return
 
-  const frag = meshMap.get(mouseover)
-  if (!frag) return
+  const fragIndex = meshMap.get(mouseover)
+  if (fragIndex == null) return
 
-  frag.rotSpeed = frag.initialRotSpeed * 10
-  animate(frag, {
-    noiseH: frag.noiseH - 5,
-    rotSpeed: frag.initialRotSpeed,
-    duration: 10000,
-    easing: 'inOutQuad',
-  })
-}
-
-function getPosition(fragment: Fragment, progress: number): _3.Vector3 {
-  const c = [0, fragment.noiseV, 0]
-  const angle = aspectRatio >= 0.75 ? 0.3 : Math.atan(1 / aspectRatio)
-
-  const r = 50 + fragment.noiseH
-  const u = [r * Math.cos(angle), -r * Math.sin(angle), 0]
-  const v = [0, 0, r]
-
-  return new _3.Vector3(
-    c[0] + u[0] * Math.cos(progress) + v[0] * Math.sin(progress),
-    c[1] + u[1] * Math.cos(progress) + v[1] * Math.sin(progress),
-    c[2] + u[2] * Math.cos(progress) + v[2] * Math.sin(progress),
-  )
+  const frag = fragments[fragIndex]
+  if (onclick?.(fragIndex, frag) !== false) frag.poke()
 }
 </script>
 
-<div class="h-dvh w-dvw overflow-hidden">
+<div class="relative h-dvh w-dvw overflow-hidden">
+  <img
+    bind:this={backgroundEl}
+    src={background}
+    alt="Background"
+    class="fixed top-[50%] left-[50%] -z-10 aspect-auto h-10 min-h-[101dvh] min-w-[101dvw] translate-x-[-50%] translate-y-[-50%] object-cover"
+  />
   <canvas
     bind:this={renderTarget}
-    style:background="url('{background}') center center / cover no-repeat"
     class="h-0 w-0"
+    onclick={(e) => {
+      console.log('Canvas clicked at', e.clientX, e.clientY)
+      updatePointer(e)
+      handleClick()
+    }}
   ></canvas>
 </div>

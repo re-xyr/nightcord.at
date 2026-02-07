@@ -1,25 +1,64 @@
 import { getRequestEvent, query } from '$app/server'
 import { posts } from '@nightcord/shared/db/schema'
-import { eq } from 'drizzle-orm'
-import { sql } from 'drizzle-orm/sql/sql'
+import { inArray, max, sql } from 'drizzle-orm'
+import z from 'zod'
 
-const SAMPLE_SIZE = 10
+export type PostView = ReturnType<typeof makePostView>
 
-export const getPosts = query(async () => {
-  const { locals } = getRequestEvent()
-  const sampledPosts = await locals.db
-    .select()
-    .from(posts)
-    .where(eq(posts.status, 'approved'))
-    .orderBy(sql`RANDOM()`) // TODO: this is effectively a full table scan, find a better way
-    .limit(SAMPLE_SIZE)
-
-  return sampledPosts.map(post => ({
+function makePostView(post: typeof posts.$inferSelect) {
+  return {
+    nickname: post.nickname,
     content: post.content,
-    language: post.inferredLanguage,
     createdAt: post.createdAt,
     authorCity: post.authorCity,
     authorRegion: post.authorRegion,
     authorCountry: post.authorCountry,
-  }))
-})
+  }
+}
+
+export const getPosts = query(
+  z.object({
+    maxEntries: z.int().min(1).max(500),
+  }),
+  async ({ maxEntries }) => {
+    const { locals } = getRequestEvent()
+
+    const [{ maxId }] = await locals.db.select({ maxId: max(posts.id) }).from(posts)
+
+    const nSamples = maxEntries / 0.98 // Account for some post-hoc rejected posts
+
+    if (!maxId || maxId < nSamples) {
+      // no point in sampling, just return everything
+      const allPosts = await locals.db
+        .select()
+        .from(posts)
+        .orderBy(sql`random()`)
+        .limit(maxEntries)
+
+      return allPosts.map(makePostView)
+    }
+
+    let sampledPosts: (typeof posts.$inferSelect)[] = []
+
+    // Sample 2 rounds max, give up after that
+    for (let i = 0; i < 2; i++) {
+      const sampleIds = new Array(nSamples)
+        .fill(null)
+        .map(() => Math.floor(Math.random() * maxId) + 1)
+
+      // The # of rows read is linear to nSamples since we have an index on the PK.
+      sampledPosts.push(
+        ...(await locals.db
+          .select()
+          .from(posts)
+          .where(inArray(posts.id, sampleIds))
+          .orderBy(sql`random()`)
+          .limit(maxEntries)),
+      )
+
+      if (sampledPosts.length >= maxEntries) break
+    }
+
+    return sampledPosts.slice(0, maxEntries).map(makePostView)
+  },
+)

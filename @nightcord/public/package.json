@@ -7,9 +7,9 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "svelte-kit sync || echo ''",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "prepare": "wrangler types src/worker-configuration.d.ts && svelte-kit sync",
+    "check": "pnpm prepare && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "pnpm prepare && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
@@ -26,16 +26,25 @@
     "wrangler": "catalog:"
   },
   "dependencies": {
+    "@fontsource-variable/eb-garamond": "catalog:",
     "@inlang/paraglide-js": "catalog:",
+    "@libsql/client": "catalog:",
     "@nightcord/shared": "workspace:^",
     "@sveltejs/kit": "catalog:",
     "animejs": "catalog:",
     "bits-ui": "catalog:",
+    "clsx": "catalog:",
     "drizzle-orm": "catalog:",
+    "ip-address": "catalog:",
+    "lucide-svelte": "catalog:",
+    "openai": "catalog:",
     "svelte": "catalog:",
+    "svelte-sonner": "catalog:",
     "svelte-turnstile": "catalog:",
+    "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:",
     "three": "catalog:",
+    "tw-animate-css": "catalog:",
     "zod": "catalog:"
   }
 }

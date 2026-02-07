@@ -1,50 +1,64 @@
 import { env } from '$env/dynamic/private'
-import z from 'zod'
+import OpenAI from 'openai'
 
-export interface TextAnalysis {
-  toxicity: number
-  language: string
+type RejectVerdict = 'policy-reject' | 'hard-reject'
+type RejectReason = keyof OpenAI.Moderation.Categories
+
+export type TextAnalysis =
+  | { verdict: 'accept' }
+  | { verdict: RejectVerdict; reasons: RejectReason[] }
+
+const openai = new OpenAI({ apiKey: env.N25_OPENAI_APIKEY })
+
+const hardRejectCategories: RejectReason[] = [
+  'sexual/minors',
+  'harassment/threatening',
+  'hate',
+  'hate/threatening',
+  'self-harm/instructions',
+]
+
+const policyRejectThresholds: Partial<Record<RejectReason, number>> = {
+  harassment: 0.8,
+  'illicit/violent': 0.8,
+  'self-harm': 0.8,
+  'violence/graphic': 0.8,
 }
 
-const zPerspectiveApiResponse = z.object({
-  attributeScores: z.object({
-    TOXICITY: z.object({
-      summaryScore: z.object({
-        value: z.number(),
-      }),
-    }),
-  }),
-  languages: z.array(z.string()).min(1),
-})
-
 export async function analyzeText(content: string): Promise<TextAnalysis | null> {
-  const requestUrl = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${env.N25_GOOGLE_APIKEY}`
-
-  const body = {
-    comment: { text: content },
-    requestedAttributes: { TOXICITY: {} },
-  }
-
   try {
-    const response = await fetch(requestUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+    const moderation = await openai.moderations.create({
+      model: 'omni-moderation-latest',
+      input: content,
     })
 
-    if (!response.ok) {
-      console.error('Failed to analyze text (non-200 status):', response.statusText)
+    if (moderation.results.length === 0) {
+      console.error('OpenAI Moderation API returned no results')
       return null
     }
 
-    const result = zPerspectiveApiResponse.parse(await response.json())
+    const [result] = moderation.results
 
-    return {
-      toxicity: result.attributeScores.TOXICITY.summaryScore.value,
-      language: result.languages[0],
+    for (const category of hardRejectCategories) {
+      if (result.categories[category]) {
+        return { verdict: 'hard-reject', reasons: [category] }
+      }
     }
+
+    const policyRejectReasons: RejectReason[] = []
+    for (const [category, threshold] of Object.entries(policyRejectThresholds)) {
+      if (result.category_scores[category as RejectReason] >= threshold) {
+        policyRejectReasons.push(category as RejectReason)
+      }
+    }
+
+    if (policyRejectReasons.length > 0) {
+      return { verdict: 'policy-reject', reasons: policyRejectReasons }
+    }
+
+    return { verdict: 'accept' }
   } catch (error) {
-    console.error('Error requesting text analysis:', error)
+    console.error('Error calling OpenAI Moderation API:', error)
     return null
   }
 }

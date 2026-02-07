@@ -1,0 +1,13 @@
+diff --git a/build/three.module.js b/build/three.module.js
+index 08dd84044224ad57e10b3edbe7dcaf3a99c89341..27d9d98c78e94664f9e26ac553e17ac408d91c14 100644
+--- a/build/three.module.js
++++ b/build/three.module.js
+@@ -9006,7 +9006,7 @@ function WebGLShadowMap( renderer, objects, capabilities ) {
+ 
+ 					if ( light.isPointLight ) {
+ 
+-						warn( 'WebGLShadowMap: VSM shadow maps are not supported for PointLights. Use PCF or BasicShadowMap instead.' );
++						// warn( 'WebGLShadowMap: VSM shadow maps are not supported for PointLights. Use PCF or BasicShadowMap instead.' );
+ 						continue;
+ 
+ 					}

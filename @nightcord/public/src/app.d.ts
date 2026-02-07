@@ -1,4 +1,3 @@
-import type { D1Database } from '@cloudflare/workers-types'
 import type { Database } from '@nightcord/shared/db'
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
@@ -8,6 +7,7 @@ declare global {
     // interface Error {}
     interface Locals {
       db: Database
+      postRateLimiter: RateLimit
       visitor: {
         ip: string | null
         userAgent: string | null
@@ -19,9 +19,7 @@ declare global {
     // interface PageData {}
     // interface PageState {}
     interface Platform {
-      env: {
-        DB: D1Database
-      }
+      env: Env
     }
   }
 }

@@ -1,1 +1,17 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+
+@theme inline {
+  --default-font-family: var(--font-serif);
+  --font-serif: 'EB Garamond Variable', serif;
+  --color-accent: #a864cf;
+  --color-fg: var(--color-stone-100);
+  --color-bg: var(--color-stone-900);
+}
+
+@layer base {
+  :root {
+    @apply text-fg scheme-dark;
+    font-size: 18px;
+  }
+}

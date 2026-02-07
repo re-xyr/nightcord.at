@@ -5,6 +5,7 @@ import { analyzeText } from '$lib/server/analyze'
 import { posts } from '@nightcord/shared/db/schema'
 import { env } from '$env/dynamic/private'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
+import { Address4, Address6 } from 'ip-address'
 
 const zTurnstileApiResponse = z.object({
   success: z.boolean(),
@@ -39,43 +40,63 @@ async function validateTurnstile(token: string, ip: string | null): Promise<bool
 
 export const submitPost = command(
   z.object({
+    nickname: z.string().max(100),
     content: z.string().min(1).max(1000),
     turnstileToken: z.string(),
   }),
-  async ({ content, turnstileToken }) => {
+  async ({ nickname, content, turnstileToken }) => {
     const { locals } = getRequestEvent()
     console.log('Received post submission:', { content, turnstileToken })
 
     if (!locals.visitor.ip || !locals.visitor.userAgent) {
       console.error('Request has no origin IP or User-Agent, dropping')
-      return { success: false, error: 'Missing visitor information' }
+      return {
+        success: false,
+        error: 'Missing visitor information. Please use a web browser to submit this form.',
+      }
     }
 
     if (
-      N25_PUBLIC_DEPLOYMENT_ENV !== 'dev' &&
+      N25_PUBLIC_DEPLOYMENT_ENV === 'production' &&
       !(await validateTurnstile(turnstileToken, locals.visitor.ip))
     ) {
-      return { success: false, error: 'Turnstile validation failed' }
+      return { success: false, error: 'Turnstile validation failed. Please try again.' }
+    }
+
+    let rateLimitKey: string
+    try {
+      rateLimitKey = new Address4(locals.visitor.ip).correctForm()
+    } catch {
+      rateLimitKey = new Address6(locals.visitor.ip).mask(64)
+    }
+
+    const { success } = await locals.postRateLimiter.limit({ key: rateLimitKey })
+    if (!success) {
+      return {
+        success: false,
+        error: 'Rate limit exceeded. Please wait a while before submitting another post.',
+      }
     }
 
     const analysis = await analyzeText(content)
     if (!analysis) {
-      return { success: false, error: 'Text analysis failed' }
+      return { success: false, error: 'Text analysis failed. Please try again.' }
     }
     console.log('Text analysis result:', analysis)
 
+    if (analysis.verdict === 'hard-reject' || analysis.verdict === 'policy-reject') {
+      // TODO: Maybe treat policy-rejects differently later, for now just reject them outright
+      return { success: true }
+    }
+
     await locals.db.insert(posts).values({
+      nickname: nickname?.trim() || null,
       content,
-      inferredLanguage: analysis.language,
-      inferredToxicity: analysis.toxicity,
-      // TODO: This is only for testing purposes, switch to fully manual review later
-      status:
-        analysis.toxicity >= 0.9 ? 'rejected' : analysis.toxicity >= 0.5 ? 'pending' : 'approved',
       authorIp: locals.visitor.ip,
       authorUserAgent: locals.visitor.userAgent,
       authorCity: locals.visitor.city ?? 'Unknown',
       authorRegion: locals.visitor.region ?? 'Unknown',
-      authorCountry: locals.visitor.country ?? 'XX',
+      authorCountry: locals.visitor.country ?? 'ZZ',
     })
     return { success: true }
   },

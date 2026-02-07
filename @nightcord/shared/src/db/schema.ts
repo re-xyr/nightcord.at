@@ -1,18 +1,13 @@
-import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
 
 export const posts = sqliteTable('post', {
   id: integer().primaryKey(),
 
+  nickname: text(),
   content: text().notNull(),
-  inferredLanguage: text().notNull(),
   createdAt: integer({ mode: 'timestamp' })
     .notNull()
     .$defaultFn(() => new Date()),
-
-  inferredToxicity: real().notNull(),
-  status: text({ enum: ['pending', 'approved', 'rejected'] })
-    .notNull()
-    .default('pending'),
 
   authorIp: text().notNull(),
   authorUserAgent: text().notNull(),

@@ -3,7 +3,7 @@
   "useTabs": false,
   "semi": false,
   "singleQuote": true,
-  "arrowParens": "alwayss",
+  "arrowParens": "always",
   "printWidth": 100,
   "plugins": ["prettier-plugin-svelte", "prettier-plugin-tailwindcss"],
   "overrides": [

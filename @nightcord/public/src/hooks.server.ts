@@ -1,14 +1,18 @@
 import type { Handle } from '@sveltejs/kit'
 import { paraglideMiddleware } from '$lib/paraglide/server'
-import { getDb } from '@nightcord/shared/db'
+import { getDb, getMockDb, type Database } from '@nightcord/shared/db'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
 
 export const handle: Handle = ({ event, resolve }) => {
   event.locals = {
-    db: getDb(event.platform!.env.DB),
+    db:
+      N25_PUBLIC_DEPLOYMENT_ENV === 'development'
+        ? (getMockDb() as unknown as Database)
+        : getDb(event.platform!.env.DB),
+    postRateLimiter: event.platform!.env.POST_RATE_LIMITER,
     visitor: {
       ip:
-        N25_PUBLIC_DEPLOYMENT_ENV === 'dev'
+        N25_PUBLIC_DEPLOYMENT_ENV === 'development'
           ? '::1'
           : (event.request.headers.get('cf-connecting-ip') ?? null),
       userAgent: event.request.headers.get('user-agent') ?? null,
