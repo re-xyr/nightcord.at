@@ -190,9 +190,9 @@ let overlay: HTMLDivElement | null = $state(null)
           class="h-24 border-b border-white/50 p-1 outline-0 transition-colors focus:border-white focus:bg-white/5"
         ></textarea>
 
-        <div class="flex flex-col-reverse sm:flex-row sm:items-center">
+        <div class="flex flex-col sm:flex-row sm:items-center">
           <Dialog.Close
-            class="flex h-8 min-w-42 flex-row items-center justify-start gap-2 bg-linear-to-l from-transparent from-0% to-stone-600 to-50% font-medium text-fg transition-colors hover:to-stone-700 not-disabled:hover:cursor-pointer disabled:opacity-50 "
+            class="flex h-8 min-w-42 flex-row items-center justify-start gap-2 bg-linear-to-l from-transparent from-0% to-stone-600 to-50% font-medium text-fg outline-fg transition-colors hover:to-stone-700 not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
           >
             <div class="flex size-8 items-center justify-center bg-black/25">
               <Undo2 class="size-4" />
@@ -204,7 +204,7 @@ let overlay: HTMLDivElement | null = $state(null)
           <button
             onclick={initiateSubmit}
             disabled={!submittable}
-            class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg transition-opacity not-disabled:hover:cursor-pointer disabled:opacity-50"
+            class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
           >
             <div>
               {#if pending}
@@ -233,6 +233,7 @@ let overlay: HTMLDivElement | null = $state(null)
         siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
         appearance="interaction-only"
         execution="execute"
+        theme="dark"
         bind:turnstile
         bind:widgetId
         on:callback={(e) => finishSubmit(e.detail.token)}
@@ -271,7 +272,7 @@ let overlay: HTMLDivElement | null = $state(null)
           <div class="flex flex-col-reverse sm:flex-row sm:items-center">
             <Dialog.Close
               onclick={() => (viewDialogOpen = false)}
-              class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg transition-opacity hover:opacity-80 not-disabled:hover:cursor-pointer disabled:opacity-50"
+              class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity hover:opacity-80 not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
             >
               <div>Move on</div>
 
@@ -285,49 +286,3 @@ let overlay: HTMLDivElement | null = $state(null)
     </Dialog.Content>
   </Dialog.Portal>
 </Dialog.Root>
-
-<!--
-<h2 class="font-bold">Submit a message</h2>
-
-<div class="flex flex-row items-stretch gap-4">
-  <textarea
-    bind:value={message}
-    placeholder="Your message..."
-    class="w-lg h-24 rounded-md border border-slate-300 p-2"
-  ></textarea>
-
-  <button
-    onclick={initiateSubmit}
-    disabled={!submittable}
-    class="w-32 rounded-md bg-slate-700 px-4 text-white transition-colors hover:bg-slate-800 disabled:bg-slate-400"
-  >
-    {#if pending}
-      <div class="text-bold animate-spin">◌</div>
-    {:else}
-      Submit
-    {/if}
-  </button>
-</div>
-
-<Turnstile
-  siteKey={N25_PUBLIC_CF_TURNSTILE_SITEKEY}
-  appearance="interaction-only"
-  execution="execute"
-  bind:turnstile
-  bind:widgetId
-  on:callback={e => finishSubmit(e.detail.token)}
-/>
-
-{#await getPosts() then posts}
-  {#each posts as post}
-    <div class="border-t border-slate-300 pt-4">
-      <p lang={post.language}>{post.content}</p>
-      <div class="text-right text-xs text-slate-500">
-        {new Date(post.createdAt).toLocaleString()}
-        from {post.authorCity}, {post.authorRegion}, {post.authorCountry}
-      </div>
-    </div>
-  {/each}
-{:catch}
-  Unable to load posts.
-{/await} -->
