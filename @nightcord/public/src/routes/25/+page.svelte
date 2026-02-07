@@ -166,11 +166,13 @@ let overlay: HTMLDivElement | null = $state(null)
   </div>
 {/if}
 
-<!-- TODO: make this look better -->
 <div
-  class="group fixed right-0 bottom-0 flex size-48 items-end justify-end bg-linear-to-br from-transparent from-50% to-black/75 p-4 text-white transition-colors focus-within:to-black has-hover:to-black"
+  class="group pointer-events-none fixed right-0 bottom-0 flex size-48 items-end justify-end bg-linear-to-br from-transparent from-50% to-black/75 text-white transition-colors focus-within:to-black has-hover:to-black"
 >
-  <button class="hover:cursor-pointer" onclick={() => (postDialogOpen = true)}>
+  <button
+    class="pointer-events-auto p-6 hover:cursor-pointer"
+    onclick={() => (postDialogOpen = true)}
+  >
     <Plus class="size-12" />
   </button>
 </div>
