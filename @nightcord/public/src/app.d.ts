@@ -10,6 +10,7 @@ declare global {
       db: Database
       postRateLimiter: RateLimit
       viewRateLimiter: RateLimit
+      workerCtx: ExecutionContext
       visitor: {
         ip: string | null
         userAgent: string | null
@@ -22,6 +23,8 @@ declare global {
     // interface PageState {}
     interface Platform {
       env: Env
+      ctx: ExecutionContext
+      cf: IncomingRequestCfProperties
     }
   }
 }

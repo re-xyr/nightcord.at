@@ -17,6 +17,7 @@ function makePostView(post: typeof posts.$inferSelect) {
     loads: post.loads,
     views: post.views,
     inferredSentiment: post.inferredSentiment,
+    inferredSelfHarmIntent: post.inferredSelfHarmIntent,
   }
 }
 

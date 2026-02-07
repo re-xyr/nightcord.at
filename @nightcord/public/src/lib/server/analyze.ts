@@ -4,16 +4,16 @@ import { InferenceClient } from '@huggingface/inference'
 import OpenAI from 'openai'
 
 export type RejectVerdict = 'policy-reject' | 'hard-reject'
-export type RejectReason = keyof OpenAI.Moderation.Categories
+export type ModerationFlag = keyof OpenAI.Moderation.Categories
 
 export type TextAnalysis =
-  | { verdict: 'accept'; sentiment: number }
-  | { verdict: RejectVerdict; reasons: RejectReason[] }
+  | { verdict: 'accept'; flags: ModerationFlag[] }
+  | { verdict: RejectVerdict; reasons: ModerationFlag[] }
 
 const openai = singleton(() => new OpenAI({ apiKey: env.N25_OPENAI_APIKEY }))
 const hf = singleton(() => new InferenceClient(env.N25_HF_APIKEY))
 
-const hardRejectCategories: RejectReason[] = [
+const hardRejectCategories: ModerationFlag[] = [
   'sexual/minors',
   'harassment/threatening',
   'hate',
@@ -21,14 +21,13 @@ const hardRejectCategories: RejectReason[] = [
   'self-harm/instructions',
 ]
 
-const policyRejectThresholds: Partial<Record<RejectReason, number>> = {
+const policyRejectThresholds: Partial<Record<ModerationFlag, number>> = {
   harassment: 0.8,
   'illicit/violent': 0.8,
-  'self-harm': 0.8,
-  'violence/graphic': 0.8,
+  'violence/graphic': 0.9,
 }
 
-export async function analyzeText(content: string): Promise<TextAnalysis | null> {
+export async function analyzeTextModeration(content: string): Promise<TextAnalysis | null> {
   try {
     const moderation = await openai().moderations.create({
       model: 'omni-moderation-latest',
@@ -48,10 +47,10 @@ export async function analyzeText(content: string): Promise<TextAnalysis | null>
       }
     }
 
-    const policyRejectReasons: RejectReason[] = []
+    const policyRejectReasons: ModerationFlag[] = []
     for (const [category, threshold] of Object.entries(policyRejectThresholds)) {
-      if (result.category_scores[category as RejectReason] >= threshold) {
-        policyRejectReasons.push(category as RejectReason)
+      if (result.category_scores[category as ModerationFlag] >= threshold) {
+        policyRejectReasons.push(category as ModerationFlag)
       }
     }
 
@@ -59,25 +58,32 @@ export async function analyzeText(content: string): Promise<TextAnalysis | null>
       return { verdict: 'policy-reject', reasons: policyRejectReasons }
     }
 
-    // proceed to sentiment analysis
-    let sentiment: number
-
-    try {
-      const result = await hf().textClassification({
-        provider: 'hf-inference',
-        model: 'distilbert-base-uncased-finetuned-sst-2-english',
-        inputs: content,
-      })
-      sentiment = result[0].label === 'POSITIVE' ? result[0].score : -result[0].score
-    } catch (error) {
-      console.error('Error calling Hugging Face Inference API:', error)
-      // If the sentiment analysis fails, we don't want to reject the post outright, so we just log the error and return a neutral sentiment
-      sentiment = 0
+    return {
+      verdict: 'accept',
+      flags: Object.entries(result.categories)
+        .filter(([, flagged]) => flagged)
+        .map(([category]) => category as ModerationFlag),
     }
-
-    return { verdict: 'accept', sentiment }
   } catch (error) {
     console.error('Error calling OpenAI Moderation API:', error)
     return null
   }
+}
+
+export async function analyzeTextSentiment(content: string): Promise<number | null> {
+  let sentiment: number | null = null
+
+  try {
+    const result = await hf().textClassification({
+      provider: 'hf-inference',
+      model: 'distilbert-base-uncased-finetuned-sst-2-english',
+      inputs: content,
+    })
+    sentiment = result[0].label === 'POSITIVE' ? result[0].score : -result[0].score
+  } catch (error) {
+    console.error('Error calling Hugging Face Inference API:', error)
+    // If the sentiment analysis fails, we don't want to reject the post outright, so we just log the error and return a neutral sentiment
+  }
+
+  return sentiment
 }

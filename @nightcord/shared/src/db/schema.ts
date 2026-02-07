@@ -19,6 +19,7 @@ export const posts = sqliteTable('post', {
   views: integer().notNull().default(0),
 
   inferredSentiment: real().notNull().default(0), // -1 to 1, negative to positive
+  inferredSelfHarmIntent: integer({ mode: 'boolean' }).notNull().default(false), // We display crisis resources if true
 })
 
 export const bannedIps = sqliteTable('bannedIp', {

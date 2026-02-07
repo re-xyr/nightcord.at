@@ -1,12 +1,12 @@
 import { command, getRequestEvent } from '$app/server'
 import z from 'zod'
 
-import { analyzeText } from '$lib/server/analyze'
+import { analyzeTextModeration, analyzeTextSentiment } from '$lib/server/analyze'
 import { posts } from '@nightcord/shared/db/schema'
 import { env } from '$env/dynamic/private'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
-import { Address4, Address6 } from 'ip-address'
 import { getRateLimitKey } from '$lib/server/util'
+import { eq } from 'drizzle-orm'
 
 const zTurnstileApiResponse = z.object({
   success: z.boolean(),
@@ -74,7 +74,7 @@ export const submitPost = command(
       }
     }
 
-    const analysis = await analyzeText(content)
+    const analysis = await analyzeTextModeration(content)
     if (!analysis) {
       return { success: false, error: 'Text analysis failed. Please try again.' }
     }
@@ -83,19 +83,33 @@ export const submitPost = command(
     if (analysis.verdict !== 'accept') {
       // TODO: Maybe treat policy-rejects differently later, for now just silently discard them
       // outright
-      return { success: true }
+      return { success: true, crisisResources: false }
     }
 
-    await locals.db.insert(posts).values({
-      nickname: nickname?.trim() || null,
-      content,
-      authorIp: locals.visitor.ip,
-      authorUserAgent: locals.visitor.userAgent,
-      authorCity: locals.visitor.city ?? 'Unknown',
-      authorRegion: locals.visitor.region ?? 'Unknown',
-      authorCountry: locals.visitor.country ?? 'ZZ',
-      inferredSentiment: analysis.sentiment,
-    })
-    return { success: true }
+    let inferredSelfHarmIntent = analysis.flags.includes('self-harm/intent')
+
+    const [{ id }] = await locals.db
+      .insert(posts)
+      .values({
+        nickname: nickname?.trim() || null,
+        content,
+        authorIp: locals.visitor.ip,
+        authorUserAgent: locals.visitor.userAgent,
+        authorCity: locals.visitor.city ?? 'Unknown',
+        authorRegion: locals.visitor.region ?? 'Unknown',
+        authorCountry: locals.visitor.country ?? 'ZZ',
+        inferredSelfHarmIntent,
+      })
+      .returning({ id: posts.id })
+
+    locals.workerCtx.waitUntil(
+      (async () => {
+        const sentiment = await analyzeTextSentiment(content)
+        if (sentiment === null) return
+        await locals.db.update(posts).set({ inferredSentiment: sentiment }).where(eq(posts.id, id))
+      })(),
+    )
+
+    return { success: true, crisisResources: inferredSelfHarmIntent }
   },
 )

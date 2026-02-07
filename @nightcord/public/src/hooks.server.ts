@@ -11,15 +11,13 @@ export const handle: Handle = ({ event, resolve }) => {
         : getDb(event.platform!.env.DB),
     postRateLimiter: event.platform!.env.POST_RATE_LIMITER,
     viewRateLimiter: event.platform!.env.VIEW_RATE_LIMITER,
+    workerCtx: event.platform!.ctx,
     visitor: {
-      ip:
-        N25_PUBLIC_DEPLOYMENT_ENV === 'development'
-          ? '::1'
-          : (event.request.headers.get('cf-connecting-ip') ?? null),
+      ip: event.getClientAddress(),
       userAgent: event.request.headers.get('user-agent') ?? null,
-      country: event.request.headers.get('cf-ipcountry') ?? null,
-      region: event.request.headers.get('cf-region') ?? null,
-      city: event.request.headers.get('cf-ipcity') ?? null,
+      country: event.platform!.cf.country ?? null,
+      region: event.platform!.cf.region ?? null,
+      city: event.platform!.cf.city ?? null,
     },
   }
 

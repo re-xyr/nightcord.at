@@ -18,8 +18,9 @@ import {
   Undo2,
   Eye,
   RefreshCcw,
+  Heart,
 } from 'lucide-svelte'
-import { onMount } from 'svelte'
+import { onMount, type Component } from 'svelte'
 import { toast } from 'svelte-sonner'
 import { recordView } from '$lib/api/record-view.remote'
 import { cn, randomSelect } from '$lib/util'
@@ -67,7 +68,16 @@ async function finishSubmit(turnstileToken: string) {
     } else {
       postDialogOpen = false
       message = ''
-      toast.success('Thank you.')
+      if (result.crisisResources) {
+        toast('You are not alone.', {
+          description: `Help is available. If you want to talk to someone, call 988 or text HOME to 741741.`,
+          duration: 15000,
+          icon: Heart as unknown as Component, // lucide types are broken
+        })
+      } else {
+        toast.success('Thank you.')
+      }
+
       transientTarget.dispatchEvent(new CustomEvent('transient'))
     }
   } catch (e) {
@@ -326,6 +336,12 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
                 <RefreshCcw class="size-3.5" />
               </span>
             </div>
+            {#if viewing.inferredSelfHarmIntent}
+              <div class="text-end align-middle text-sm font-medium opacity-75">
+                <Heart class="inline size-3" /> You are not alone; help is available. If you want to talk
+                to someone, call 988 or text HOME to 741741.
+              </div>
+            {/if}
           </div>
 
           <div class="flex flex-col-reverse sm:flex-row sm:items-center">
