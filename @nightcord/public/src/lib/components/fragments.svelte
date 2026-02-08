@@ -23,7 +23,6 @@ const { count, onpointermove, onmouseenter, onmouseleave, onclick, transient }: 
 
 onMount(() => {
   transient?.(() => {
-    console.log('Transient event received, refreshing fragments')
     const frag = Fragment.make(aspectRatio)
     frag.orbit = (3 * Math.PI) / 2
     frag.offsetH = 5
@@ -270,7 +269,6 @@ function handleClick() {
     bind:this={renderTarget}
     class="h-0 w-0"
     onclick={(e) => {
-      console.log('Canvas clicked at', e.clientX, e.clientY)
       updatePointer(e)
       handleClick()
     }}

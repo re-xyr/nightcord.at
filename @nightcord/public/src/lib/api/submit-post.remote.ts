@@ -3,40 +3,27 @@ import z from 'zod'
 
 import { analyzeTextModeration, analyzeTextSentiment } from '$lib/server/analyze'
 import { posts } from '@nightcord/shared/db/schema'
-import { env } from '$env/dynamic/private'
 import { N25_PUBLIC_DEPLOYMENT_ENV } from '$env/static/public'
 import { getRateLimitKey } from '$lib/server/util'
-import { eq } from 'drizzle-orm'
+import { validateTurnstile } from '$lib/server/turnstile'
+import type { NewPostRow } from '@nightcord/shared/db'
 
-const zTurnstileApiResponse = z.object({
-  success: z.boolean(),
-  'error-codes': z.array(z.string()).optional(),
-})
+export type SubmitPostResult =
+  | { success: true; crisisResources: boolean }
+  | { success: false; error: string }
 
-async function validateTurnstile(token: string, ip: string | null): Promise<boolean> {
-  try {
-    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secret: env.N25_CF_TURNSTILE_SECRET,
-        response: token,
-        remoteip: ip,
-      }),
-    })
-
-    if (!response.ok) {
-      console.error(`Turnstile verification failed (non-200 status):`, response.statusText)
-      return false
-    }
-
-    const data = zTurnstileApiResponse.parse(await response.json())
-    if (!data.success) console.error(`Turnstile verification unsuccessful:`, data['error-codes'])
-    return data.success
-  } catch (error) {
-    console.error(`Error validating Turnstile token:`, error)
-    return false
+async function validateAndStore(validate: Promise<boolean>, row: NewPostRow) {
+  if (!(await validate)) {
+    console.error('Turnstile validation failed, not saving post')
+    return
   }
+
+  const sentiment = await analyzeTextSentiment(row.content)
+  console.log('Inferred sentiment for post content:', sentiment)
+  row.inferredSentiment = sentiment
+
+  await getRequestEvent().locals.db.insert(posts).values(row)
+  console.log('Post saved to database successfully:', row)
 }
 
 export const submitPost = command(
@@ -45,69 +32,53 @@ export const submitPost = command(
     content: z.string().min(1).max(1000),
     turnstileToken: z.string(),
   }),
-  async ({ nickname, content, turnstileToken }) => {
-    const { locals } = getRequestEvent()
-    console.log('Received post submission:', { content, turnstileToken })
+  async ({ nickname: rawNickname, content, turnstileToken }): Promise<SubmitPostResult> => {
+    console.log('Received post submission:', { rawNickname, content, turnstileToken })
 
-    if (!locals.visitor.ip || !locals.visitor.userAgent) {
-      console.error('Request has no origin IP or User-Agent, dropping')
-      return {
-        success: false,
-        error: 'Missing visitor information. Please use a web browser to submit this form.',
-      }
-    }
-
-    if (
-      N25_PUBLIC_DEPLOYMENT_ENV === 'production' &&
-      !(await validateTurnstile(turnstileToken, locals.visitor.ip))
-    ) {
-      return { success: false, error: 'Turnstile validation failed. Please try again.' }
-    }
+    const { locals, getClientAddress, request } = getRequestEvent()
+    const ip = getClientAddress()
+    const nickname = rawNickname.trim() || null
 
     const { success } = await locals.postRateLimiter.limit({
-      key: getRateLimitKey(locals.visitor.ip),
+      key: getRateLimitKey(ip),
     })
     if (!success) {
+      console.error(`Rate limit exceeded for IP ${ip}, rejecting`)
       return {
         success: false,
         error: 'Rate limit exceeded. Please wait a while before submitting another post.',
       }
     }
 
-    const analysis = await analyzeTextModeration(content)
-    if (!analysis) {
-      return { success: false, error: 'Text analysis failed. Please try again.' }
-    }
-    console.log('Text analysis result:', analysis)
+    // Launch Turnstile validation non-blockingly
+    const turnstilePromise =
+      N25_PUBLIC_DEPLOYMENT_ENV === 'production'
+        ? validateTurnstile(turnstileToken, ip)
+        : Promise.resolve(true)
 
+    // Text analysis for moderation purposes
+    const analysis = await analyzeTextModeration(nickname ? `${nickname}: ${content}` : content)
+    console.log('Moderation analysis result:', analysis)
     if (analysis.verdict !== 'accept') {
       // TODO: Maybe treat policy-rejects differently later, for now just silently discard them
       // outright
+      console.log('Moderation verdict: reject, silently discarding post')
       return { success: true, crisisResources: false }
     }
 
     let inferredSelfHarmIntent = analysis.flags.includes('self-harm/intent')
 
-    const [{ id }] = await locals.db
-      .insert(posts)
-      .values({
-        nickname: nickname?.trim() || null,
-        content,
-        authorIp: locals.visitor.ip,
-        authorUserAgent: locals.visitor.userAgent,
-        authorCity: locals.visitor.city ?? 'Unknown',
-        authorRegion: locals.visitor.region ?? 'Unknown',
-        authorCountry: locals.visitor.country ?? 'ZZ',
-        inferredSelfHarmIntent,
-      })
-      .returning({ id: posts.id })
-
     locals.workerCtx.waitUntil(
-      (async () => {
-        const sentiment = await analyzeTextSentiment(content)
-        if (sentiment === null) return
-        await locals.db.update(posts).set({ inferredSentiment: sentiment }).where(eq(posts.id, id))
-      })(),
+      validateAndStore(turnstilePromise, {
+        nickname,
+        content,
+        authorIp: ip,
+        authorUserAgent: request.headers.get('user-agent') ?? null,
+        authorCity: locals.cf.city ?? 'Unknown',
+        authorRegion: locals.cf.region ?? 'Unknown',
+        authorCountry: locals.cf.country ?? 'ZZ',
+        inferredSelfHarmIntent,
+      }),
     )
 
     return { success: true, crisisResources: inferredSelfHarmIntent }

@@ -11,13 +11,7 @@ declare global {
       postRateLimiter: RateLimit
       viewRateLimiter: RateLimit
       workerCtx: ExecutionContext
-      visitor: {
-        ip: string | null
-        userAgent: string | null
-        country: string | null
-        region: string | null
-        city: string | null
-      }
+      cf: IncomingRequestCfProperties
     }
     // interface PageData {}
     // interface PageState {}

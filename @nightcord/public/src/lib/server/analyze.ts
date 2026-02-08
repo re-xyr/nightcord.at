@@ -27,7 +27,7 @@ const policyRejectThresholds: Partial<Record<ModerationFlag, number>> = {
   'violence/graphic': 0.9,
 }
 
-export async function analyzeTextModeration(content: string): Promise<TextAnalysis | null> {
+export async function analyzeTextModeration(content: string): Promise<TextAnalysis> {
   try {
     const moderation = await openai().moderations.create({
       model: 'omni-moderation-latest',
@@ -35,8 +35,8 @@ export async function analyzeTextModeration(content: string): Promise<TextAnalys
     })
 
     if (moderation.results.length === 0) {
-      console.error('OpenAI Moderation API returned no results')
-      return null
+      console.warn('OpenAI Moderation API returned no results; defaulting to accept with no flags')
+      return { verdict: 'accept', flags: [] }
     }
 
     const [result] = moderation.results
@@ -65,25 +65,31 @@ export async function analyzeTextModeration(content: string): Promise<TextAnalys
         .map(([category]) => category as ModerationFlag),
     }
   } catch (error) {
-    console.error('Error calling OpenAI Moderation API:', error)
-    return null
+    console.error(
+      'Error calling OpenAI Moderation API:',
+      error,
+      'defaulting to accept with no flags',
+    )
+    return { verdict: 'accept', flags: [] }
   }
 }
 
-export async function analyzeTextSentiment(content: string): Promise<number | null> {
-  let sentiment: number | null = null
-
+export async function analyzeTextSentiment(content: string): Promise<number> {
   try {
     const result = await hf().textClassification({
       provider: 'hf-inference',
       model: 'distilbert-base-uncased-finetuned-sst-2-english',
       inputs: content,
     })
-    sentiment = result[0].label === 'POSITIVE' ? result[0].score : -result[0].score
+    return result[0].label === 'POSITIVE' ? result[0].score : -result[0].score
   } catch (error) {
-    console.error('Error calling Hugging Face Inference API:', error)
-    // If the sentiment analysis fails, we don't want to reject the post outright, so we just log the error and return a neutral sentiment
+    // If the sentiment analysis fails, we don't want to reject the post outright, so we just log
+    // the error and return a neutral sentiment
+    console.error(
+      'Error calling Hugging Face Inference API:',
+      error,
+      'defaulting to neutral sentiment',
+    )
+    return 0
   }
-
-  return sentiment
 }

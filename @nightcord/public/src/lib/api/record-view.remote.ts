@@ -8,22 +8,22 @@ export const recordView = command(
   z.object({
     postId: z.number(),
   }),
-  async ({ postId }) => {
-    const { locals } = getRequestEvent()
+  async ({ postId }): Promise<void> => {
+    console.log('Received view for post ID:', postId)
 
-    const { success } = await locals.viewRateLimiter.limit({
-      key: getRateLimitKey(locals.visitor.ip),
-    })
+    const { locals, getClientAddress } = getRequestEvent()
+    const ip = getClientAddress()
 
+    const { success } = await locals.viewRateLimiter.limit({ key: getRateLimitKey(ip) })
     if (!success) {
-      console.warn(`View rate limit exceeded for IP ${locals.visitor.ip}`)
-      return { success: true } // Don't block the view, just don't record it
+      console.warn(`View rate limit exceeded for IP ${ip}`)
+      return // Don't block the view, just don't record it
     }
 
     await locals.db
       .update(posts)
       .set({ views: sql`${posts.views} + 1` })
       .where(eq(posts.id, postId))
-    return { success: true }
+    return
   },
 )

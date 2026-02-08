@@ -1,5 +1,5 @@
 // Function to map a value in [-1, 1] to an RGB color based on black-body radiation
-// Credit: Claude Opus 4.5
+// Credit: Claude Opus 4.6
 
 export function toCssString(color: { r: number; g: number; b: number }): string {
   return `rgb(${color.r} ${color.g} ${color.b} / 25%)`

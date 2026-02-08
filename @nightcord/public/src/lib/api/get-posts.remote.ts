@@ -1,11 +1,12 @@
 import { getRequestEvent, query } from '$app/server'
+import type { PostRow } from '@nightcord/shared/db'
 import { posts } from '@nightcord/shared/db/schema'
 import { inArray, max, sql } from 'drizzle-orm'
 import z from 'zod'
 
 export type PostView = ReturnType<typeof makePostView>
 
-function makePostView(post: typeof posts.$inferSelect) {
+function makePostView(post: PostRow) {
   return {
     id: post.id,
     nickname: post.nickname,
@@ -25,13 +26,13 @@ export const getPosts = query(
   z.object({
     maxEntries: z.int().min(1).max(500),
   }),
-  async ({ maxEntries }) => {
+  async ({ maxEntries }): Promise<PostView[]> => {
     const { locals } = getRequestEvent()
 
     const [{ maxId }] = await locals.db.select({ maxId: max(posts.id) }).from(posts)
     const nSamples = maxEntries / 0.98 // Account for some post-hoc rejected posts
 
-    let sampledPosts: (typeof posts.$inferSelect)[] = []
+    let sampledPosts: PostRow[] = []
     if (!maxId || maxId < nSamples) {
       // no point in sampling, just return everything
       sampledPosts = await locals.db
@@ -60,17 +61,15 @@ export const getPosts = query(
       }
     }
 
+    const selectedIds = sampledPosts.map((p) => p.id)
+    console.log('Sampled post IDs:', selectedIds)
+
     // Update load counts for the sampled posts. Maybe use an asynchronous approach in the future
     // if this turns out to be a bottleneck.
     await locals.db
       .update(posts)
       .set({ loads: sql`${posts.loads} + 1` })
-      .where(
-        inArray(
-          posts.id,
-          sampledPosts.map((p) => p.id),
-        ),
-      )
+      .where(inArray(posts.id, selectedIds))
 
     return sampledPosts.slice(0, maxEntries).map(makePostView)
   },

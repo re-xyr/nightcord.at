@@ -12,16 +12,8 @@ export const handle: Handle = ({ event, resolve }) => {
     postRateLimiter: event.platform!.env.POST_RATE_LIMITER,
     viewRateLimiter: event.platform!.env.VIEW_RATE_LIMITER,
     workerCtx: event.platform!.ctx,
-    visitor: {
-      ip: event.getClientAddress(),
-      userAgent: event.request.headers.get('user-agent') ?? null,
-      country: event.platform!.cf.country ?? null,
-      region: event.platform!.cf.region ?? null,
-      city: event.platform!.cf.city ?? null,
-    },
+    cf: event.platform!.cf,
   }
-
-  console.log('Visitor metadata:', event.locals.visitor)
 
   return paraglideMiddleware(event.request, ({ request, locale }) => {
     event.request = request
