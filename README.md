@@ -29,6 +29,10 @@ pnpm -F public build    # Build application
 - Ability for users to flag messages
 - Determine fragment colors based on sentiment analysis
 
+## License
+
+This project is provided under [GNU General Public License v3.0 or Later (`GPL-3.0-or-later`)](LICENSE).
+
 ---
 
 nightcord.at is an unofficial fanwork of [*Project SEKAI: Colorful Stage! feat. Hatsune Miku*](https://colorfulstage.com/) and its concept is also inspired by [*Arcaea*](https://arcaea.lowiro.com).

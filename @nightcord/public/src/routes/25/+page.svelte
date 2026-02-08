@@ -203,8 +203,15 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
     />
     <Dialog.Content
       interactOutsideBehavior="ignore"
-      class="dialog fixed top-[50%] left-[50%] z-40 flex translate-x-[-50%] translate-y-[-50%] justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
+      class="dialog fixed top-[50%] left-[50%] z-40 flex max-w-full translate-x-[-50%] translate-y-[-50%] justify-center overflow-clip bg-black p-5 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     >
+      <div class="fixed top-2 right-3 text-sm opacity-50">
+        2025 &copy; <a href="https://dayli.ly" class="underline hover:no-underline">daylily</a> |
+        <a href="https://github.com/re-xyr/nightcord.at" class="underline hover:no-underline"
+          >open source</a
+        >
+      </div>
+
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
         <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
 
