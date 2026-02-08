@@ -13,5 +13,6 @@
   :root {
     @apply text-fg scheme-dark;
     font-size: 18px;
+    touch-action: pinch-zoom;
   }
 }

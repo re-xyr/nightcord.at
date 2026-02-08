@@ -28,3 +28,11 @@ export function singleton<T>(make: () => T): () => T {
 export function randomSelect<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
+
+export function clientWidth(): number {
+  return document.documentElement.clientWidth
+}
+
+export function clientHeight(): number {
+  return document.documentElement.clientHeight
+}

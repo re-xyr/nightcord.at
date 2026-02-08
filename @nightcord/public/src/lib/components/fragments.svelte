@@ -2,17 +2,16 @@
 import { onDestroy, onMount } from 'svelte'
 import * as _3 from 'three'
 
-import { innerWidth, innerHeight } from 'svelte/reactivity/window'
-
 import background from '$lib/assets/empty-sekai.png'
 import { browser } from '$app/environment'
 import { on } from 'svelte/events'
 import { Fragment } from '$lib/fragment'
 import { animate } from 'animejs'
+import { clientHeight, clientWidth } from '$lib/util'
 
 interface Props {
   count: number
-  onpointermove?: (event: MouseEvent) => void
+  onpointermove?: (event: PointerEvent) => void
   onmouseenter?: (id: number, frag: Fragment) => void | boolean
   onmouseleave?: (id: number, frag: Fragment) => void | boolean
   onclick?: (id: number, frag: Fragment) => void | boolean
@@ -47,7 +46,8 @@ onMount(() => {
 let mouseover: _3.Mesh | null = null
 
 const raycaster = new _3.Raycaster()
-const pointer = new _3.Vector2()
+let isTouch: boolean = true
+const pointer: _3.Vector2 = new _3.Vector2()
 
 let renderTarget: HTMLCanvasElement
 let backgroundEl: HTMLImageElement
@@ -70,15 +70,18 @@ const CAMERA_Y = 1.5
 const CAMERA_Z = -55
 
 let aspectRatio = { current: 1.0 }
-let viewportHeight = 512
-let viewportWidth = 512
+let viewportHeight = $state(512)
+let viewportWidth = $state(512)
 
-const updatePointer = (event: MouseEvent) => {
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1
+const updatePointer = (event: PointerEvent) => {
+  isTouch = event.pointerType === 'touch'
+  pointer.x = (event.pageX / clientWidth()) * 2 - 1
+  pointer.y = -(event.pageY / clientHeight()) * 2 + 1
 
-  if (backgroundEl)
-    backgroundEl.style.translate = `${-50 + pointer.x * 0.1}% ${-50 - pointer.y * 0.1}%`
+  if (backgroundEl) {
+    if (isTouch) backgroundEl.style.translate = ''
+    else backgroundEl.style.translate = `${-50 + pointer.x * 0.1}% ${-50 - pointer.y * 0.1}%`
+  }
 
   updateIntersection()
 }
@@ -87,6 +90,23 @@ onMount(() => {
   on(window, 'pointermove', (e) => {
     updatePointer(e)
     onpointermove?.(e)
+  })
+
+  on(window, 'pointerdown', (e) => {
+    updatePointer(e)
+    onpointermove?.(e)
+  })
+
+  on(window, 'pointerup', (e) => {
+    updatePointer(e)
+    onpointermove?.(e)
+  })
+
+  viewportHeight = clientHeight()
+  viewportWidth = clientWidth()
+  on(window, 'resize', () => {
+    viewportHeight = clientHeight()
+    viewportWidth = clientWidth()
   })
 })
 
@@ -145,10 +165,12 @@ onDestroy(() => {
 })
 
 function updateIntersection() {
+  let newIntersect: _3.Mesh | undefined = undefined
+
   raycaster.setFromCamera(pointer, camera)
   const intersects = raycaster.intersectObjects(group.children, true)
 
-  const newIntersect = intersects
+  newIntersect = intersects
     .map((i) => i.object)
     .find((obj) => obj instanceof _3.Mesh && obj.material instanceof _3.MeshPhysicalMaterial) as
     | _3.Mesh
@@ -186,28 +208,18 @@ function frame(now: DOMHighResTimeStamp) {
     transientFragment.update(now)
   }
 
-  camera.position.set(
-    CAMERA_X - pointer.x * 0.05 * aspectRatio.current,
-    CAMERA_Y + pointer.y * 0.05,
-    CAMERA_Z,
-  )
+  let x = isTouch ? 0 : pointer.x
+  let y = isTouch ? 0 : pointer.y
 
-  pointLight.position.set(
-    CAMERA_X - pointer.x * 2.5 * aspectRatio.current,
-    CAMERA_Y + pointer.y * 2.5,
-    CAMERA_Z,
-  )
+  camera.position.set(CAMERA_X - x * 0.05 * aspectRatio.current, CAMERA_Y + y * 0.05, CAMERA_Z)
+  pointLight.position.set(CAMERA_X - x * 2.5 * aspectRatio.current, CAMERA_Y + y * 2.5, CAMERA_Z)
 
   updateIntersection()
-
   renderer.render(scene, camera)
 }
 
 // Depends: innerWidth, innerHeight
 $effect(() => {
-  if (!innerWidth.current || !innerHeight.current) return
-  viewportHeight = innerHeight.current
-  viewportWidth = innerWidth.current
   aspectRatio.current = viewportWidth / viewportHeight
 
   console.log(
@@ -216,7 +228,7 @@ $effect(() => {
     'x',
     viewportHeight,
     'with aspect ratio',
-    aspectRatio,
+    aspectRatio.current,
   )
 
   camera.aspect = aspectRatio.current
@@ -258,19 +270,12 @@ function handleClick() {
 }
 </script>
 
-<div class="relative h-dvh w-dvw overflow-hidden">
+<div class="relative h-lvh w-lvw overflow-hidden">
   <img
     bind:this={backgroundEl}
     src={background}
     alt="Background"
     class="fixed top-[50%] left-[50%] -z-10 aspect-auto h-10 min-h-[101dvh] min-w-[101dvw] translate-x-[-50%] translate-y-[-50%] object-cover"
   />
-  <canvas
-    bind:this={renderTarget}
-    class="h-0 w-0"
-    onclick={(e) => {
-      updatePointer(e)
-      handleClick()
-    }}
-  ></canvas>
+  <canvas bind:this={renderTarget} class="h-0 w-0" onclick={(_e) => handleClick()}></canvas>
 </div>

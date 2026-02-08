@@ -23,7 +23,7 @@ import {
 import { onMount, type Component } from 'svelte'
 import { toast } from 'svelte-sonner'
 import { recordView } from '$lib/api/record-view.remote'
-import { cn, randomSelect } from '$lib/util'
+import { clientHeight, clientWidth, cn, randomSelect } from '$lib/util'
 import { blackbodyColor, toCssString } from '$lib/black-body'
 
 let nickname = $state('')
@@ -90,21 +90,22 @@ async function finishSubmit(turnstileToken: string) {
 
 let hovered: boolean = $state(false)
 let hoverIx: number = $state(0)
+let isTouch = $state(true)
 let pointer = $state({ x: 0, y: 0 })
 
 $effect(() => {
   if (!overlay) return
 
-  if (pointer.x > 0.8 * innerWidth) {
-    overlay.style.right = `${innerWidth - pointer.x}px`
+  if (pointer.x > 0.5 * clientWidth()) {
+    overlay.style.right = `${clientWidth() - pointer.x}px`
     overlay.style.left = 'auto'
   } else {
     overlay.style.left = `${pointer.x}px`
     overlay.style.right = 'auto'
   }
 
-  if (pointer.y > 0.95 * innerHeight) {
-    overlay.style.bottom = `${innerHeight - pointer.y}px`
+  if (pointer.y > 0.95 * clientHeight()) {
+    overlay.style.bottom = `${clientHeight() - pointer.y}px`
     overlay.style.top = 'auto'
   } else {
     overlay.style.top = `${pointer.y}px`
@@ -112,9 +113,10 @@ $effect(() => {
   }
 })
 
-function handleMove(event: MouseEvent) {
-  pointer.x = event.clientX
-  pointer.y = event.clientY
+function handleMove(event: PointerEvent) {
+  isTouch = event.pointerType === 'touch'
+  pointer.x = event.pageX
+  pointer.y = event.pageY
 }
 
 function handleHover(id: number, _frag: Fragment) {
@@ -173,7 +175,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
   <div
     bind:this={overlay}
     class="pointer-events-none fixed bg-black p-2 shadow-lg shadow-black/25 transition-opacity"
-    style:opacity={hovered ? 1 : 0}
+    style:opacity={hovered && !isTouch ? 1 : 0}
   >
     {#if post.nickname}
       <span class="font-semibold">{truncate(post.nickname, 30)}:</span>
@@ -186,7 +188,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
   class="group pointer-events-none fixed right-0 bottom-0 flex size-48 items-end justify-end bg-linear-to-br from-transparent from-50% to-black/75 text-white transition-colors focus-within:to-black has-hover:to-black"
 >
   <button
-    class="pointer-events-auto p-6 hover:cursor-pointer"
+    class="pointer-events-auto m-0.5 rounded-full p-5.5 outline-white hover:cursor-pointer focus-visible:outline-2"
     onclick={() => (postDialogOpen = true)}
   >
     <Plus class="size-12" />
@@ -223,7 +225,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
 
         <div class="flex flex-col sm:flex-row sm:items-center">
           <Dialog.Close
-            class="flex h-8 min-w-42 flex-row items-center justify-start gap-2 bg-linear-to-l from-transparent from-0% to-stone-600 to-50% font-medium text-fg outline-fg transition-colors hover:to-stone-700 not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
+            class="flex h-8 min-w-42 flex-row items-center justify-start gap-2 border-b border-transparent bg-linear-to-l from-transparent from-0% to-stone-600 to-50% font-medium text-fg transition-colors hover:to-stone-700 not-disabled:hover:cursor-pointer focus-visible:border-white focus-visible:outline-0 disabled:opacity-50"
           >
             <div class="flex size-8 items-center justify-center bg-black/25">
               <Undo2 class="size-4" />
@@ -236,7 +238,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
             bind:this={submitButton}
             onclick={initiateSubmit}
             disabled={!submittable}
-            class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
+            class="flex h-8 grow flex-row items-center justify-end gap-2 border-b border-transparent bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg transition-opacity not-disabled:hover:cursor-pointer focus-visible:border-white focus-visible:outline-0 disabled:opacity-50"
           >
             <div>
               {#if pending}
@@ -347,7 +349,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
           <div class="flex flex-col-reverse sm:flex-row sm:items-center">
             <Dialog.Close
               onclick={() => (viewDialogOpen = false)}
-              class="flex h-8 grow flex-row items-center justify-end gap-2 bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity hover:opacity-80 not-disabled:hover:cursor-pointer focus-visible:outline-2 disabled:opacity-50"
+              class="flex h-8 grow flex-row items-center justify-end gap-2 border-b border-transparent bg-linear-to-r from-transparent from-0% to-accent to-50% font-medium text-fg outline-fg transition-opacity hover:opacity-80 not-disabled:hover:cursor-pointer focus-visible:border-white focus-visible:outline-0 disabled:opacity-50"
             >
               <div>Move on</div>
 
