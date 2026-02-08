@@ -19,6 +19,8 @@ import {
   Eye,
   RefreshCcw,
   Heart,
+  Quote,
+  PenTool,
 } from 'lucide-svelte'
 import { onMount, type Component } from 'svelte'
 import { toast } from 'svelte-sonner'
@@ -213,9 +215,11 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
       </div>
 
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
-        <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
+        <PenTool
+          class="absolute -top-12 -left-4 inline-block size-32 -scale-x-100 rotate-180 opacity-10"
+        />
 
-        <Dialog.Title class="grow pl-12 text-3xl">Leave a message</Dialog.Title>
+        <Dialog.Title class="grow text-3xl">Leave a message</Dialog.Title>
 
         <input
           bind:value={nickname}
@@ -308,7 +312,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
       style="--tw-shadow-color: {toCssString(blackbodyColor(-(viewing?.inferredSentiment ?? 0)))}"
     >
       <div class="relative flex w-dvw max-w-2xl flex-col gap-4">
-        <MoveDown class="absolute -top-6 -left-4 inline-block size-16" />
+        <Quote class="absolute -top-10 -left-4 inline-block size-32 fill-fg opacity-10" />
 
         {#if viewing}
           <code
@@ -316,7 +320,7 @@ const shouldShowTurnstile = $derived(turnstileIsActive && postDialogOpen)
             role="presentation">{viewing.inferredSentiment.toFixed(16)}</code
           >
 
-          <Dialog.Title class="grow pl-12 text-3xl">
+          <Dialog.Title class="grow text-3xl">
             {#if viewing.nickname}
               <span class="font-semibold">{viewing.nickname}</span>
             {:else}
