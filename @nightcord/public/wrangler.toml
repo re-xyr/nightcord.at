@@ -1,6 +1,6 @@
 name = "nightcord-at-25"
 main = ".svelte-kit/cloudflare/_worker.js"
-compatibility_date = "2025-09-05"
+compatibility_date = "2025-02-24"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
@@ -42,5 +42,10 @@ period = 10
 N25_PUBLIC_DEPLOYMENT_ENV = "production"
 N25_PUBLIC_CF_TURNSTILE_SITEKEY = "0x4AAAAAABzvp9Ei968n3hWk"
 
-[observability]
+[observability.logs]
 enabled = true
+head_sampling_rate = 1.0
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1.0
