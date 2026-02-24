@@ -28,6 +28,7 @@ pnpm -F public build    # Build application
 - A manual moderation queue for borderline cases
 - Ability for users to flag messages
 - Determine fragment colors based on sentiment analysis
+- Localization (zh, ja)
 
 ## License
 

@@ -14,7 +14,6 @@ import {
   Ellipsis,
   ArrowRight,
   Plus,
-  MoveDown,
   Undo2,
   Eye,
   RefreshCcw,
